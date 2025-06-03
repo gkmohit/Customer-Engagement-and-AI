@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Budget Tracker – Net Worth Line Graph</title>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #2f3132;
+      --section-bg: #f5f5f5;
+      --accent-red: #c0392b;
+      --accent-blue: #2980b9;
+      --accent-green: #16a085;
+      --border-color: #ddd;
+      --positive-color: #27ae60;
+      --negative-color: #c0392b;
+    }
+    body.dark {
+      --bg-color: #2f3132;
+      --text-color: #ffffff;
+      --section-bg: #3a3c3e;
+      --accent-red: #c0392b;
+      --accent-blue: #2980b9;
+      --accent-green: #16a085;
+      --border-color: #555;
+      --positive-color: #2ecc71;
+      --negative-color: #e74c3c;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .theme-toggle, .reset-btn {
+      position: fixed;
+      top: 20px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      z-index: 100;
+    }
+    .theme-toggle {
+      right: 180px; /* increased from 120px for extra gap */
+      background-color: var(--accent-blue);
+    }
+    .theme-toggle:hover {
+      background-color: var(--accent-green);
+    }
+    .reset-btn {
+      right: 20px;
+      background-color: var(--accent-red);
+    }
+    .reset-btn:hover {
+      background-color: #e74c3c;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    section {
+      background-color: var(--section-bg);
+      border-radius: 6px;
+      padding: 15px 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    section h2 {
+      margin-bottom: 12px;
+      color: var(--text-color);
+      font-size: 1.2rem;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    form label {
+      color: var(--text-color);
+      font-size: 0.95rem;
+    }
+    form input, form select, form textarea {
+      padding: 8px;
+      font-size: 0.95rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    }
+    form textarea { resize: vertical; }
+    form button {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: var(--accent-green);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    form button:hover {
+      background-color: var(--accent-blue);
+    }
+    ul {
+      list-style: none;
+      margin-top: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    ul li {
+      padding: 8px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-color);
+      font-size: 0.9rem;
+    }
+    ul li:last-child { border-bottom: none; }
+    .item-details { flex: 1; margin-left: 10px; }
+    .item-actions button {
+      background: none;
+      border: none;
+      color: var(--accent-red);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: color 0.3s;
+    }
+    .item-actions button:hover {
+      color: var(--accent-blue);
+    }
+    .totals {
+      background-color: var(--section-bg);
+      border-radius: 6px;
+      padding: 15px 20px;
+      margin: 20px auto;
+      max-width: 1000px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 10px;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: var(--section-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      margin-right: 5px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .tab.active {
+      background-color: var(--bg-color);
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+      padding-top: 10px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .totals h2 {
+      margin-bottom: 12px;
+      color: var(--text-color);
+    }
+    .totals ul {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+    .summary-tile {
+      background-color: var(--bg-color);
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .tile-number {
+      font-size: 1.6rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: var(--text-color);
+    }
+    .tile-label {
+      font-size: 1rem;
+      color: var(--text-color);
+    }
+    #exportBtn {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background-color: var(--accent-blue);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #exportBtn:hover {
+      background-color: var(--accent-red);
+    }
+    .chart-container {
+      max-width: 1000px;
+      margin: 20px auto;
+      background-color: var(--section-bg);
+      border-radius: 6px;
+      padding: 15px 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .chart-controls {
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .chart-controls button {
+      margin: 0 5px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-color);
+      background-color: var(--section-bg);
+      color: var(--text-color);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .chart-controls button.active {
+      background-color: var(--accent-blue);
+      color: #fff;
+      border-color: var(--accent-blue);
+    }
+    .help-section {
+      background-color: var(--section-bg);
+      border-radius: 6px;
+      padding: 15px 20px;
+      margin: 20px auto;
+      max-width: 1000px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .help-section h3 {
+      margin-bottom: 10px;
+      color: var(--text-color);
+    }
+    .help-section p {
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      color: var(--text-color);
+    }
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle">Dark Mode</button>
+  <button class="reset-btn" id="resetBtn">Clear All Data</button>
+  <h1>Budget Tracker</h1>
+
+  <div class="container">
+    <section>
+      <h2>Add Income / Expense</h2>
+      <form id="txnForm">
+        <label for="txnType">Type:</label>
+        <select id="txnType" required>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+
+        <label for="txnAmount">Amount:</label>
+        <input type="number" id="txnAmount" step="0.01" min="0" required>
+
+        <label for="txnCategory">Category:</label>
+        <input type="text" id="txnCategory" placeholder="e.g., Salary, Food" required>
+
+        <label for="txnDesc">Description:</label>
+        <textarea id="txnDesc" rows="2" placeholder="Optional description"></textarea>
+
+        <button type="submit">Add Transaction</button>
+      </form>
+
+      <div style="margin-top: 15px;">
+        <label for="csvInput">Import Transactions (CSV):</label>
+        <input type="file" id="csvInput" accept=".csv">
+      </div>
+
+      <ul id="txnList"></ul>
+    </section>
+
+    <section>
+      <h2>Add Stock (Quantity Only)</h2>
+      <form id="stockForm">
+        <label for="stockSymbol">Stock Symbol:</label>
+        <input type="text" id="stockSymbol" placeholder="e.g., AAPL" required>
+
+        <label for="stockQty">Quantity:</label>
+        <input type="number" id="stockQty" step="1" min="0" required>
+
+        <button type="submit">Add Stock</button>
+      </form>
+
+      <ul id="stockList"></ul>
+    </section>
+  </div>
+
+  <div class="totals">
+    <div class="tabs">
+      <div class="tab active" data-tab="currentTab">Current</div>
+      <div class="tab" data-tab="comparisonTab">Comparison</div>
+    </div>
+    <div id="currentTab" class="tab-content active">
+      <h2>Summary</h2>
+      <ul>
+        <li class="summary-tile">
+          <div class="tile-number">$<span id="totalIncome">0.00</span></div>
+          <div class="tile-label">Income</div>
+        </li>
+        <li class="summary-tile">
+          <div class="tile-number">$<span id="totalExpenses">0.00</span></div>
+          <div class="tile-label">Expenses</div>
+        </li>
+        <li class="summary-tile">
+          <div class="tile-number">$<span id="currentBalance">0.00</span></div>
+          <div class="tile-label">Balance</div>
+        </li>
+        <li class="summary-tile">
+          <div class="tile-number"><span id="totalStockQty">0</span></div>
+          <div class="tile-label">Total Stock Qty</div>
+        </li>
+        <li class="summary-tile">
+          <div class="tile-number">$<span id="netWorth">0.00</span></div>
+          <div class="tile-label">Net Worth</div>
+        </li>
+      </ul>
+    </div>
+    <div id="comparisonTab" class="tab-content">
+      <h2>Comparison to Last Month</h2>
+      <ul>
+        <li class="summary-tile">
+          <div class="tile-number"><span id="incomeDelta">+ $0.00</span></div>
+          <div class="tile-label">Income Change</div>
+        </li>
+        <li class="summary-tile">
+          <div class="tile-number"><span id="expensesDelta">+ $0.00</span></div>
+          <div class="tile-label">Expenses Change</div>
+        </li>
+        <li class="summary-tile">
+          <div class="tile-number"><span id="balanceDelta">+ $0.00</span></div>
+          <div class="tile-label">Balance Change</div>
+        </li>
+        <li class="summary-tile">
+          <div class="tile-number"><span id="netWorthDelta">+ $0.00</span></div>
+          <div class="tile-label">Net Worth Change</div>
+        </li>
+      </ul>
+    </div>
+    <button id="exportBtn">Export Balance Sheet (CSV)</button>
+  </div>
+
+  <div class="chart-container">
+    <h2>Wealth Growth Over Time</h2>
+    <div class="chart-controls">
+      <button data-period="day" class="period-btn">Day</button>
+      <button data-period="week" class="period-btn">Week</button>
+      <button data-period="month" class="period-btn active">Month</button>
+      <button data-period="year" class="period-btn">Year</button>
+    </div>
+    <canvas id="wealthChart"></canvas>
+  </div>
+
+  <div class="help-section">
+    <h3>How to Import Transactions via CSV</h3>
+    <p>1. Create a CSV with header: <em>type,amount,category,description,date</em></p>
+    <p>2. Columns: <strong>type</strong> ("income" or "expense"), <strong>amount</strong> (e.g., 100.50), <strong>category</strong> (e.g., "Salary"), <strong>description</strong> (optional), <strong>date</strong> (ISO or parseable, e.g., 2025-06-03T14:30:00).</p>
+    <p>3. Click "Import Transactions from CSV" and select your file.</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // LocalStorage keys
+    const TXN_KEY = 'budget_transactions';
+    const STOCK_KEY = 'budget_stocks';
+
+    // DOM elements
+    const txnForm = document.getElementById('txnForm');
+    const txnType = document.getElementById('txnType');
+    const txnAmount = document.getElementById('txnAmount');
+    const txnCategory = document.getElementById('txnCategory');
+    const txnDesc = document.getElementById('txnDesc');
+    const txnList = document.getElementById('txnList');
+
+    const csvInput = document.getElementById('csvInput');
+
+    const stockForm = document.getElementById('stockForm');
+    const stockSymbol = document.getElementById('stockSymbol');
+    const stockQty = document.getElementById('stockQty');
+    const stockList = document.getElementById('stockList');
+
+    const totalIncomeEl = document.getElementById('totalIncome');
+    const totalExpensesEl = document.getElementById('totalExpenses');
+    const currentBalanceEl = document.getElementById('currentBalance');
+    const totalStockQtyEl = document.getElementById('totalStockQty');
+    const netWorthEl = document.getElementById('netWorth');
+
+    const incomeDeltaEl = document.getElementById('incomeDelta');
+    const expensesDeltaEl = document.getElementById('expensesDelta');
+    const balanceDeltaEl = document.getElementById('balanceDelta');
+    const netWorthDeltaEl = document.getElementById('netWorthDelta');
+
+    const exportBtn = document.getElementById('exportBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const themeToggle = document.getElementById('themeToggle');
+
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    const periodButtons = document.querySelectorAll('.period-btn');
+
+    // Data arrays
+    let transactions = [];
+    let stocks = [];
+
+    // Chart instance
+    let wealthChart;
+
+    // Save to localStorage
+    function saveData() {
+      localStorage.setItem(TXN_KEY, JSON.stringify(transactions));
+      localStorage.setItem(STOCK_KEY, JSON.stringify(stocks));
+    }
+
+    // Load from localStorage
+    function loadData() {
+      const tData = localStorage.getItem(TXN_KEY);
+      transactions = tData ? JSON.parse(tData) : [];
+      const sData = localStorage.getItem(STOCK_KEY);
+      stocks = sData ? JSON.parse(sData) : [];
+    }
+
+    // Add a transaction
+    txnForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const type = txnType.value;
+      const amount = parseFloat(txnAmount.value);
+      const category = txnCategory.value.trim();
+      const description = txnDesc.value.trim();
+      if (isNaN(amount) || amount <= 0 || !category) return;
+      const txn = {
+        id: Date.now(),
+        type,
+        amount,
+        category,
+        description,
+        date: new Date().toISOString()
+      };
+      transactions.push(txn);
+      saveData();
+      txnForm.reset();
+      renderTransactions();
+      updateTotals();
+    });
+
+    // Remove a transaction
+    function removeTransaction(id) {
+      transactions = transactions.filter(t => t.id !== id);
+      saveData();
+      renderTransactions();
+      updateTotals();
+    }
+
+    // Render transactions list
+    function renderTransactions() {
+      txnList.innerHTML = '';
+      transactions.forEach(t => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>${t.type === 'income' ? '+' : '-'}$${t.amount.toFixed(2)}</strong>
+          <div class="item-details">
+            <span>${t.category}</span>
+            ${t.description ? `<span> - ${t.description}</span>` : ''}
+          </div>
+          <div class="item-actions">
+            <button onclick="removeTransaction(${t.id})">✕</button>
+          </div>
+        `;
+        txnList.appendChild(li);
+      });
+    }
+
+    // CSV import
+    csvInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = event => {
+        parseCSV(event.target.result);
+        csvInput.value = '';
+      };
+      reader.readAsText(file);
+    });
+
+    // Parse CSV text
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) return;
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const idxType = headers.indexOf('type');
+      const idxAmount = headers.indexOf('amount');
+      const idxCategory = headers.indexOf('category');
+      const idxDesc = headers.indexOf('description');
+      const idxDate = headers.indexOf('date');
+      if (idxType < 0 || idxAmount < 0 || idxCategory < 0) {
+        alert('CSV must have headers: type, amount, category, description, date');
+        return;
+      }
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        const type = cols[idxType];
+        const amount = parseFloat(cols[idxAmount]);
+        const category = cols[idxCategory];
+        const description = idxDesc >= 0 ? cols[idxDesc] : '';
+        const date = idxDate >= 0 ? cols[idxDate] : new Date().toISOString();
+        if ((type === 'income' || type === 'expense') && !isNaN(amount) && category) {
+          const txn = {
+            id: Date.now() + i,
+            type,
+            amount,
+            category,
+            description,
+            date
+          };
+          transactions.push(txn);
+        }
+      }
+      saveData();
+      renderTransactions();
+      updateTotals();
+    }
+
+    // Add stock
+    stockForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const symbol = stockSymbol.value.trim().toUpperCase();
+      const qty = parseInt(stockQty.value, 10);
+      if (!symbol || isNaN(qty) || qty <= 0) return;
+      const existing = stocks.find(s => s.symbol === symbol);
+      if (existing) {
+        existing.quantity += qty;
+      } else {
+        stocks.push({ symbol, quantity: qty });
+      }
+      saveData();
+      stockForm.reset();
+      renderStocks();
+      updateTotals();
+    });
+
+    // Remove stock
+    function removeStock(sym) {
+      stocks = stocks.filter(s => s.symbol !== sym);
+      saveData();
+      renderStocks();
+      updateTotals();
+    }
+
+    // Render stocks list
+    function renderStocks() {
+      stockList.innerHTML = '';
+      stocks.forEach(s => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>${s.symbol}</strong>: ${s.quantity} shares
+          <div class="item-actions">
+            <button onclick="removeStock('${s.symbol}')">✕</button>
+          </div>
+        `;
+        stockList.appendChild(li);
+      });
+    }
+
+    // Calculate totals & build chart data
+    function updateTotals() {
+      const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+      const expenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+      const balance = income - expenses;
+      const totalStockQty = stocks.reduce((sum, s) => sum + s.quantity, 0);
+      const netWorth = balance;
+
+      totalIncomeEl.textContent = income.toFixed(2);
+      totalExpensesEl.textContent = expenses.toFixed(2);
+      currentBalanceEl.textContent = balance.toFixed(2);
+      totalStockQtyEl.textContent = totalStockQty;
+      netWorthEl.textContent = netWorth.toFixed(2);
+
+      updateComparison();
+      rebuildHistoryAndChart();
+    }
+
+    // Comparison to last month
+    function updateComparison() {
+      const now = new Date();
+      const currMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+      const currIncome = transactions
+        .filter(t => new Date(t.date) >= currMonthStart && t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+      const prevIncome = transactions
+        .filter(t => new Date(t.date) >= prevMonthStart && new Date(t.date) < currMonthStart && t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const currExpenses = transactions
+        .filter(t => new Date(t.date) >= currMonthStart && t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+      const prevExpenses = transactions
+        .filter(t => new Date(t.date) >= prevMonthStart && new Date(t.date) < currMonthStart && t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const currBalance = currIncome - currExpenses;
+      const prevBalance = prevIncome - prevExpenses;
+
+      const currNet = currBalance;
+      const prevNet = prevBalance;
+
+      const incomeDelta = currIncome - prevIncome;
+      const expensesDelta = currExpenses - prevExpenses;
+      const balanceDelta = currBalance - prevBalance;
+      const netDelta = currNet - prevNet;
+
+      function fmtDelta(v) {
+        const sign = v >= 0 ? '+' : '-';
+        return `${sign}$${Math.abs(v).toFixed(2)}`;
+      }
+      function styleDelta(el, v) {
+        el.textContent = fmtDelta(v);
+        el.style.color = v >= 0 ? 'var(--positive-color)' : 'var(--negative-color)';
+      }
+
+      styleDelta(incomeDeltaEl, incomeDelta);
+      styleDelta(expensesDeltaEl, expensesDelta);
+      styleDelta(balanceDeltaEl, balanceDelta);
+      styleDelta(netWorthDeltaEl, netDelta);
+    }
+
+    // Initialize Chart.js
+    function initChart() {
+      const ctx = document.getElementById('wealthChart').getContext('2d');
+      wealthChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Net Worth',
+            data: [],
+            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent-blue').trim(),
+            backgroundColor: 'rgba(41,128,185,0.2)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          scales: {
+            x: {
+              ticks: { color: 'var(--text-color)' },
+              grid: { color: 'var(--border-color)' }
+            },
+            y: {
+              ticks: { color: 'var(--text-color)' },
+              grid: { color: 'var(--border-color)' }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: { color: 'var(--text-color)' }
+            }
+          }
+        }
+      });
+    }
+
+    // Rebuild history array + update chart data
+    function rebuildHistoryAndChart() {
+      // 1) Extract all unique dates from transactions
+      const dates = Array.from(new Set(transactions.map(t => t.date.split('T')[0])));
+      dates.sort((a, b) => new Date(a) - new Date(b));
+
+      // 2) For each date, compute cumulative net worth up to that day
+      const historyPoints = dates.map(d => {
+        const cumulative = transactions
+          .filter(t => t.date.split('T')[0] <= d)
+          .reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0);
+        return { dateISO: d, netWorth: cumulative };
+      });
+
+      // 3) Populate Chart.js dataset
+      const labels = historyPoints.map(pt => pt.dateISO);
+      const data = historyPoints.map(pt => pt.netWorth);
+
+      wealthChart.data.labels = labels;
+      wealthChart.data.datasets[0].data = data;
+      wealthChart.update();
+    }
+
+    // Get active period (unused now)
+    function getCurrentPeriod() {
+      return 'all';
+    }
+
+    // Export CSV
+    exportBtn.addEventListener('click', () => {
+      const income = totalIncomeEl.textContent;
+      const expenses = totalExpensesEl.textContent;
+      const balance = currentBalanceEl.textContent;
+      const totalStockQty = totalStockQtyEl.textContent;
+      const netWorth = netWorthEl.textContent;
+
+      let csv = 'Type,Value\n';
+      csv += `Income,${income}\n`;
+      csv += `Expenses,${expenses}\n`;
+      csv += `Balance,${balance}\n`;
+      csv += `Total Stock Quantity,${totalStockQty}\n`;
+      csv += `Net Worth,${netWorth}\n\n`;
+
+      csv += 'Transactions:\nType,Amount,Category,Description,Date\n';
+      transactions.forEach(t => {
+        csv += `${t.type},${t.amount.toFixed(2)},${t.category},${t.description || ''},${t.date}\n`;
+      });
+      csv += '\nStocks:\nSymbol,Quantity\n';
+      stocks.forEach(s => {
+        csv += `${s.symbol},${s.quantity}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'balance_sheet.csv';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    // Clear all data
+    resetBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all data and start fresh?')) {
+        localStorage.clear();
+        location.reload();
+      }
+    });
+
+    // Theme toggle
+    function loadTheme() {
+      const saved = localStorage.getItem('theme') || 'light';
+      if (saved === 'dark') {
+        document.body.classList.add('dark');
+        themeToggle.textContent = 'Light Mode';
+      } else {
+        document.body.classList.remove('dark');
+        themeToggle.textContent = 'Dark Mode';
+      }
+      if (wealthChart) {
+        wealthChart.data.datasets[0].borderColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-blue').trim();
+        wealthChart.update();
+      }
+    }
+    themeToggle.addEventListener('click', () => {
+      if (document.body.classList.contains('dark')) {
+        document.body.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+        themeToggle.textContent = 'Dark Mode';
+      } else {
+        document.body.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.textContent = 'Light Mode';
+      }
+      if (wealthChart) {
+        wealthChart.data.datasets[0].borderColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-blue').trim();
+        wealthChart.update();
+      }
+    });
+
+    // Tab switching
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const target = tab.getAttribute('data-tab');
+        tabContents.forEach(c => c.id === target ? c.classList.add('active') : c.classList.remove('active'));
+      });
+    });
+
+    // Period button switching (no aggregation here; always show full history)
+    periodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        periodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        rebuildHistoryAndChart();
+      });
+    });
+
+    // Initial load
+    function init() {
+      initChart();
+      loadData();
+      renderTransactions();
+      renderStocks();
+      updateTotals();
+      loadTheme();
+    }
+
+    // Expose remove functions
+    window.removeTransaction = removeTransaction;
+    window.removeStock = removeStock;
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
