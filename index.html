@@ -4,6 +4,34 @@
   <meta charset="UTF-8" />
   <title>Customer Engagement and Artificial Intelligence</title>
   <style>
+    /* CSS Variables for Light and Dark themes */
+    :root {
+      --bg-color: #fcfbf7;           /* Off-white */
+      --text-color: #36405b;         /* Dark navy */
+      --header-bg: #36405b;          /* Dark navy */
+      --header-text: #fcfbf7;        /* Off-white */
+      --subtitle-text: #fedeab;      /* Light yellow */
+      --tile-bg: #91c2c9;            /* Teal */
+      --tile-text: #36405b;          /* Dark navy */
+      --tile-hover-bg: #f2a28b;      /* Coral */
+      --tile-hover-text: #fcfbf7;    /* Off-white */
+      --button-bg: #f2a28b;          /* Coral */
+      --button-text: #fcfbf7;        /* Off-white */
+    }
+    body.dark {
+      --bg-color: #36405b;           /* Dark navy */
+      --text-color: #fcfbf7;         /* Off-white */
+      --header-bg: #fcfbf7;          /* Off-white */
+      --header-text: #36405b;        /* Dark navy */
+      --subtitle-text: #91c2c9;      /* Teal */
+      --tile-bg: #36405b;            /* Dark navy */
+      --tile-text: #fcfbf7;          /* Off-white */
+      --tile-hover-bg: #fedeab;      /* Light yellow */
+      --tile-hover-text: #36405b;    /* Dark navy */
+      --button-bg: #91c2c9;          /* Teal */
+      --button-text: #36405b;        /* Dark navy */
+    }
+
     /* Reset and base styles */
     * {
       margin: 0;
@@ -12,44 +40,82 @@
     }
     body {
       font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
-      color: #333;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      padding: 40px 20px;
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
     }
+
+    /* Header with logo and theme toggle */
     header {
-      text-align: center;
-      margin-bottom: 40px;
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--header-bg);
+      padding: 10px 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      transition: background-color 0.3s;
+    }
+    header .left {
+      display: flex;
+      align-items: center;
+    }
+    header img {
+      height: 50px;
+      width: auto;
+      margin-right: 20px;
+    }
+    header .title-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     header h1 {
-      font-size: 2.5rem;
+      font-size: 1.75rem;
+      color: var(--header-text);
       margin-bottom: 5px;
-      color: #2c3e50;
+      transition: color 0.3s;
     }
     header h2 {
-      font-size: 1.25rem;
+      font-size: 1rem;
+      color: var(--subtitle-text);
       font-weight: normal;
-      color: #555;
-      margin-bottom: 20px;
+      transition: color 0.3s;
     }
+    #themeToggle {
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Tile container */
     #tileContainer {
       width: 100%;
-      max-width: 800px;
+      max-width: 900px;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 20px;
     }
     .tile {
-      background-color: #fff;
+      background-color: var(--tile-bg);
       border-radius: 8px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
       overflow: hidden;
       text-decoration: none;
-      color: inherit;
-      transition: transform 0.2s, box-shadow 0.2s;
+      color: var(--tile-text);
+      transition: transform 0.2s, background-color 0.3s, color 0.3s;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -60,24 +126,32 @@
     }
     .tile:hover {
       transform: translateY(-5px);
+      background-color: var(--tile-hover-bg);
+      color: var(--tile-hover-text);
       box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
     }
     .tile h3 {
       font-size: 1.1rem;
       margin-bottom: 8px;
-      color: #2980b9;
     }
     .tile p {
-      font-size: 0.95rem;
-      color: #555;
+      font-size: 0.9rem;
     }
+
     /* Responsive adjustments */
     @media (max-width: 480px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      header img {
+        margin-bottom: 10px;
+      }
       header h1 {
-        font-size: 2rem;
+        font-size: 1.5rem;
       }
       header h2 {
-        font-size: 1rem;
+        font-size: 0.9rem;
       }
       .tile {
         padding: 15px;
@@ -87,16 +161,21 @@
         font-size: 1rem;
       }
       .tile p {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
       }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Customer Engagement and Artificial Intelligence</h1>
-    <h2>Professor: Victor del Rosal</h2>
-    <p>Select a lecture below to view its content.</p>
+    <div class="left">
+      <img src="Product Management Course.png" alt="Course Logo" />
+      <div class="title-container">
+        <h1>Customer Engagement and Artificial Intelligence</h1>
+        <h2>Professor: Victor del Rosal</h2>
+      </div>
+    </div>
+    <button id="themeToggle">Dark Mode</button>
   </header>
 
   <div id="tileContainer">
@@ -104,23 +183,20 @@
   </div>
 
   <script>
-    /**
-     * List of folder names. Each folder should contain its own index.html.
-     * When you add a new lecture folder, append its folder name to this array.
-     */
+    // List of lecture folder names
     const folders = [
       "Lecture1",
       "Lecture2",
       "Lecture3"
-      // Add new lecture folder names here, e.g. "Lecture4"
+      // Add new lecture folder names here
     ];
 
     const tileContainer = document.getElementById('tileContainer');
+    const themeToggle = document.getElementById('themeToggle');
 
+    // Build lecture tiles
     function buildTiles() {
-      // Clear any existing tiles
       tileContainer.innerHTML = '';
-
       if (folders.length === 0) {
         const message = document.createElement('p');
         message.textContent = 'No lectures available yet.';
@@ -129,8 +205,6 @@
         tileContainer.appendChild(message);
         return;
       }
-
-      // Create one tile per folder
       folders.forEach(folderName => {
         const link = document.createElement('a');
         link.href = `${folderName}/index.html`;
@@ -143,8 +217,35 @@
       });
     }
 
-    // Build the tiles on page load
-    document.addEventListener('DOMContentLoaded', buildTiles);
+    // Theme toggle logic
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        themeToggle.textContent = 'Light Mode';
+      } else {
+        document.body.classList.remove('dark');
+        themeToggle.textContent = 'Dark Mode';
+      }
+    }
+
+    themeToggle.addEventListener('click', () => {
+      if (document.body.classList.contains('dark')) {
+        document.body.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+        themeToggle.textContent = 'Dark Mode';
+      } else {
+        document.body.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.textContent = 'Light Mode';
+      }
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTheme();
+      buildTiles();
+    });
   </script>
 </body>
 </html>
