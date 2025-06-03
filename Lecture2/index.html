@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Scrum Sticky Notes with Sprints & Burndown</title>
+  <style>
+    :root {
+      --red:       #C0392B;
+      --green:     #16A085;
+      --blue:      #2980B9;
+      --light-bg:  #f4f4f4;
+      --light-col: #ffffff;
+      --light-text:#333333;
+      --dark-bg:   #222222;
+      --dark-col:  #2c2c2c;
+      --dark-text: #f4f4f4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0;
+      font-family: sans-serif;
+      background: var(--light-bg);
+      color: var(--light-text);
+      transition: background .3s, color .3s;
+    }
+    body.dark-theme {
+      background: var(--dark-bg);
+      color: var(--dark-text);
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--green); color: #fff; padding: 10px;
+      transition: background .3s;
+    }
+    header.dark-theme { background: var(--red); }
+    header h1 { margin: 0; font-size: 1.2rem; }
+    header button {
+      background: var(--blue); border: none; color: #fff;
+      padding: 5px 10px; margin-left: 8px; border-radius: 4px;
+      cursor: pointer; font-size: .9rem;
+    }
+
+    /* SPRINT PANEL */
+    #sprintPanel {
+      display: none;
+      background: var(--light-col);
+      transition: background .3s, color .3s;
+      padding: 10px;
+    }
+    body.dark-theme #sprintPanel {
+      background: var(--dark-col);
+      color: var(--dark-text);
+    }
+    #sprintPanel h2 { margin-top: 0; }
+    #sprintForm input, #sprintForm button {
+      margin-right: 6px; padding: 4px 8px; font-size: .9rem;
+    }
+    #sprintList { list-style: none; padding: 0; margin: 6px 0; }
+    #sprintList li { margin-bottom: 6px; }
+
+    /* BOARD */
+    .column-container { display: flex; gap: 10px; padding: 10px; }
+    .column {
+      flex: 1; background: var(--light-col); transition: background .3s;
+      border: 1px solid #aaa; display: flex; flex-direction: column;
+    }
+    body.dark-theme .column {
+      background: var(--dark-col);
+      border-color: #444;
+    }
+    .column h3 { margin: 10px; }
+    .add-note {
+      display: flex; padding: 0 10px 10px;
+    }
+    .add-note input {
+      flex: 1; padding: 6px; border: 1px solid #ccc;
+      border-radius: 4px 0 0 4px;
+      background: #fff; color: #000;
+    }
+    body.dark-theme .add-note input {
+      background: #444; color: #eee; border-color: #555;
+    }
+    .add-note button {
+      padding: 6px 12px; border: none;
+      background: var(--green); color: #fff;
+      border-radius: 0 4px 4px 0; cursor: pointer;
+    }
+    .notes {
+      flex: 1; overflow-y: auto; padding: 0 10px 10px;
+    }
+    .note {
+      position: relative;
+      background: #fffb88; margin: 4px 0; padding: 6px 24px 6px 6px;
+      border-radius: 4px; cursor: grab; color: #000;
+      transition: background .3s, color .3s;
+    }
+    body.dark-theme .note {
+      background: #555500; color: #fff;
+    }
+    .note .delete-btn {
+      position: absolute; top: 4px; right: 6px;
+      background: transparent; border: none;
+      font-size: 16px; line-height: 1; cursor: pointer;
+      color: #c00;
+    }
+
+    /* POKER PANEL */
+    #pokerPanel {
+      display: none;
+      position: absolute; top: 60px; right: 10px;
+      background: var(--light-col); border: 1px solid #ccc;
+      padding: 10px; width: 180px;
+      transition: background .3s, color .3s;
+    }
+    body.dark-theme #pokerPanel {
+      background: var(--dark-col); color: var(--dark-text);
+      border-color: #555;
+    }
+    .card {
+      display: inline-block; width: 40px; height: 60px;
+      line-height: 60px; text-align: center; margin: 3px;
+      border: 2px solid var(--blue); border-radius: 4px;
+      cursor: pointer; user-select: none; font-weight: bold;
+    }
+
+    /* FULLSCREEN BURNDOWN */
+    #burndownModal {
+      display: none;
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8);
+      align-items: center; justify-content: center;
+    }
+    #burndownModal.active { display: flex; }
+    #burndownContent {
+      background: var(--light-col);
+      padding: 20px; max-width: 90vw; max-height: 90vh;
+      width: 90vw; height: 90vh;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column;
+      transition: background .3s, color .3s;
+    }
+    body.dark-theme #burndownContent {
+      background: var(--dark-col); color: var(--dark-text);
+    }
+    #burndownContent h2 { margin: 0 0 10px; }
+    #burndownChart {
+      flex: 1; width: 100%; height: 100%;
+    }
+    #closeBurndown {
+      margin-top: 10px; align-self: flex-end;
+      padding: 6px 12px; background: var(--blue);
+      border: none; color: #fff; border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header id="pageHeader">
+    <h1>Scrum Sticky Notes</h1>
+    <div>
+      <button id="toggleTheme">Dark Mode</button>
+      <button id="togglePoker">Enable Planning Poker</button>
+      <button id="toggleSprint">Sprints</button>
+    </div>
+  </header>
+
+  <!-- Sprint Management Panel -->
+  <section id="sprintPanel">
+    <h2>Sprints</h2>
+    <form id="sprintForm">
+      <input type="text" id="sprintName" placeholder="Sprint Name" required />
+      <input type="date" id="sprintStart" required />
+      <input type="date" id="sprintEnd" required />
+      <button type="submit">Add Sprint</button>
+    </form>
+    <ul id="sprintList"></ul>
+  </section>
+
+  <!-- Board Columns -->
+  <div class="column-container" id="board">
+    <div class="column" data-col="todo">
+      <h3>To Do</h3>
+      <div class="add-note">
+        <input placeholder="New task…" /><button>Add</button>
+      </div>
+      <div class="notes"></div>
+    </div>
+    <div class="column" data-col="doing">
+      <h3>Doing</h3>
+      <div class="add-note">
+        <input placeholder="New task…" /><button>Add</button>
+      </div>
+      <div class="notes"></div>
+    </div>
+    <div class="column" data-col="done">
+      <h3>Done</h3>
+      <div class="add-note">
+        <input placeholder="New task…" /><button>Add</button>
+      </div>
+      <div class="notes"></div>
+    </div>
+  </div>
+
+  <!-- Planning Poker Panel -->
+  <div id="pokerPanel">
+    <h3>Planning Poker</h3>
+    <div id="cards">
+      <div class="card">1</div>
+      <div class="card">2</div>
+      <div class="card">3</div>
+      <div class="card">5</div>
+      <div class="card">8</div>
+      <div class="card">13</div>
+    </div>
+    <p>Select a card for a task.</p>
+  </div>
+
+  <!-- Fullscreen Burndown Modal -->
+  <div id="burndownModal">
+    <div id="burndownContent">
+      <h2 id="burndownTitle"></h2>
+      <canvas id="burndownChart"></canvas>
+      <button id="closeBurndown">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Storage Keys & State ---
+    const NOTES_KEY   = 'scrum_notes';
+    const SPRINTS_KEY = 'scrum_sprints';
+    let notes   = JSON.parse(localStorage.getItem(NOTES_KEY)   || '[]');
+    let sprints = JSON.parse(localStorage.getItem(SPRINTS_KEY) || '[]');
+
+    // --- Element References ---
+    const body          = document.body;
+    const header        = document.getElementById('pageHeader');
+    const toggleTheme   = document.getElementById('toggleTheme');
+    const togglePoker   = document.getElementById('togglePoker');
+    const toggleSprint  = document.getElementById('toggleSprint');
+    const pokerPanel    = document.getElementById('pokerPanel');
+    const sprintPanel   = document.getElementById('sprintPanel');
+    const sprintForm    = document.getElementById('sprintForm');
+    const sprintList    = document.getElementById('sprintList');
+    const board         = document.getElementById('board');
+    const burndownModal = document.getElementById('burndownModal');
+    const burndownTitle = document.getElementById('burndownTitle');
+    const burndownCanvas= document.getElementById('burndownChart');
+    const closeBurndown = document.getElementById('closeBurndown');
+
+    // --- Theme Toggle ---
+    let dark = false;
+    toggleTheme.onclick = () => {
+      dark = !dark;
+      body.classList.toggle('dark-theme', dark);
+      header.classList.toggle('dark-theme', dark);
+      toggleTheme.textContent = dark ? 'Light Mode' : 'Dark Mode';
+    };
+
+    // --- Planning Poker Toggle ---
+    togglePoker.onclick = () => {
+      const showing = pokerPanel.style.display === 'block';
+      pokerPanel.style.display = showing ? 'none' : 'block';
+      togglePoker.textContent = showing ? 'Enable Planning Poker' : 'Disable Planning Poker';
+    };
+
+    // --- Sprint Panel Toggle ---
+    toggleSprint.onclick = () => {
+      const showing = sprintPanel.style.display === 'block';
+      sprintPanel.style.display = showing ? 'none' : 'block';
+    };
+
+    // --- Save & Render Functions ---
+    function saveNotes() {
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+    }
+    function saveSprints() {
+      localStorage.setItem(SPRINTS_KEY, JSON.stringify(sprints));
+    }
+
+    // Render sticky notes in each column
+    let draggedId = null;
+    function renderNotes() {
+      document.querySelectorAll('.column').forEach(colEl => {
+        const col = colEl.dataset.col;
+        const container = colEl.querySelector('.notes');
+        container.innerHTML = '';
+        notes.filter(n => n.col === col).forEach(n => {
+          const d = document.createElement('div');
+          d.className = 'note';
+          d.draggable = true;
+          d.textContent = n.text;
+          // Delete button
+          const btn = document.createElement('button');
+          btn.className = 'delete-btn';
+          btn.innerHTML = '&times;';
+          btn.onclick = () => {
+            notes = notes.filter(x => x.id !== n.id);
+            saveNotes(); renderNotes();
+          };
+          d.appendChild(btn);
+          // Drag events
+          d.addEventListener('dragstart', () => draggedId = n.id);
+          container.appendChild(d);
+        });
+      });
+    }
+
+    // Render sprint list
+    function renderSprints() {
+      sprintList.innerHTML = '';
+      sprints.forEach((s, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${s.name} [${s.start} → ${s.end}] `;
+        const btn = document.createElement('button');
+        btn.textContent = 'View Burndown';
+        btn.onclick = () => showBurndown(i);
+        li.appendChild(btn);
+        sprintList.appendChild(li);
+      });
+    }
+
+    // --- Setup Board: Add & Drag/Drop ---
+    board.querySelectorAll('.column').forEach(colEl => {
+      const col = colEl.dataset.col;
+      const input = colEl.querySelector('input');
+      const btn   = colEl.querySelector('button');
+
+      btn.onclick = () => {
+        const text = input.value.trim();
+        if (!text) return;
+        notes.push({
+          id: Date.now(),
+          col,
+          text,
+          created: new Date().toISOString().slice(0,10)
+        });
+        input.value = '';
+        saveNotes(); renderNotes();
+      };
+
+      colEl.addEventListener('dragover', e => e.preventDefault());
+      colEl.addEventListener('drop', () => {
+        notes = notes.map(n => n.id == draggedId ? { ...n, col } : n);
+        saveNotes(); renderNotes();
+      });
+    });
+
+    // --- Sprint Form Handling ---
+    sprintForm.onsubmit = e => {
+      e.preventDefault();
+      const name  = document.getElementById('sprintName').value;
+      const start = document.getElementById('sprintStart').value;
+      const end   = document.getElementById('sprintEnd').value;
+      if (end < start) {
+        return alert('End date must be on or after start date');
+      }
+      sprints.push({ name, start, end });
+      saveSprints();
+      renderSprints();
+      sprintForm.reset();
+    };
+
+    // --- Burndown Chart ---
+    function showBurndown(idx) {
+      const s = sprints[idx];
+      burndownTitle.textContent = `Burndown: ${s.name}`;
+      // Build date array
+      const start = new Date(s.start), end = new Date(s.end);
+      const days  = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+        days.push(d.toISOString().slice(0,10));
+      }
+      // Compute open tasks per day
+      const data = days.map(day => notes.filter(n => {
+        return n.created <= day && !(n.col==='done' && n.created < day);
+      }).length);
+
+      drawChart(days, data);
+      burndownModal.classList.add('active');
+    }
+
+    function drawChart(labels, data) {
+      const canvas = burndownCanvas;
+      const ctx    = canvas.getContext('2d');
+      // Resize canvas
+      canvas.width  = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+
+      const padding = 50;
+      const w = canvas.width  - padding*2;
+      const h = canvas.height - padding*2;
+      const max = Math.max(...data,1);
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Axes
+      ctx.strokeStyle = getComputedStyle(body).color;
+      ctx.beginPath();
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(padding, padding + h);
+      ctx.lineTo(padding + w, padding + h);
+      ctx.stroke();
+
+      // Burndown line
+      ctx.strokeStyle = getComputedStyle(body).getPropertyValue('--blue');
+      ctx.beginPath();
+      data.forEach((y,i) => {
+        const x  = padding + (i/(labels.length-1))*w;
+        const yy = padding + h - (y/max)*h;
+        i===0 ? ctx.moveTo(x,yy) : ctx.lineTo(x,yy);
+      });
+      ctx.stroke();
+
+      // Y-labels
+      ctx.fillStyle = getComputedStyle(body).color;
+      ctx.textAlign = 'right';
+      for (let i=0; i<=5; i++){
+        const val = Math.round(max*(i/5));
+        const y   = padding + h - (i/5)*h;
+        ctx.fillText(val, padding-10, y+4);
+      }
+
+      // X-labels (MM-DD), sparse
+      ctx.textAlign = 'center';
+      const step = Math.ceil(labels.length/10);
+      labels.forEach((lab,i) => {
+        if (i%step===0 || i===labels.length-1) {
+          const [yyyy,mm,dd] = lab.split('-');
+          const x = padding + (i/(labels.length-1))*w;
+          ctx.fillText(`${mm}-${dd}`, x, padding+h+20);
+        }
+      });
+    }
+
+    closeBurndown.onclick = () => burndownModal.classList.remove('active');
+
+    // --- Initial Render ---
+    renderNotes();
+    renderSprints();
+
+  </script>
+</body>
+</html>

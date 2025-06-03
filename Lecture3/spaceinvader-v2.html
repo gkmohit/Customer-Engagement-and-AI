@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Space Invaders with Bot</title>
+  <style>
+    /* Basic reset and centering */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #000;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      position: relative;
+    }
+    canvas {
+      background-color: #000;
+      display: block;
+      /* Add a border to simulate arcade cabinet */
+      border: 2px solid #fff;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      letter-spacing: 2px;
+      display: flex;
+      gap: 20px;
+    }
+    #scoreBoard div {
+      margin: 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="scoreBoard">
+    <div id="playerScore">You: 0</div>
+    <div id="botScore">Bot: 0</div>
+  </div>
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+  <script>
+    (function() {
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const playerScoreEl = document.getElementById('playerScore');
+      const botScoreEl = document.getElementById('botScore');
+
+      // Game constants
+      const CANVAS_WIDTH = canvas.width;
+      const CANVAS_HEIGHT = canvas.height;
+      const PLAYER_WIDTH = 40;
+      const PLAYER_HEIGHT = 20;
+      const PLAYER_SPEED = 5;
+      const BOT_SPEED = 3;
+      const BULLET_WIDTH = 4;
+      const BULLET_HEIGHT = 10;
+      const BULLET_SPEED = 7;
+      const INVADER_ROWS = 5;
+      const INVADER_COLS = 10;
+      const INVADER_WIDTH = 30;
+      const INVADER_HEIGHT = 20;
+      const INVADER_PADDING = 15;
+      const INVADER_OFFSET_TOP = 50;
+      const INVADER_OFFSET_LEFT = 50;
+      const INVADER_SPEED_X = 1;
+      const INVADER_DROP_Y = 20;
+
+      let rightPressed = false;
+      let leftPressed = false;
+      let spacePressed = false;
+      let gameOver = false;
+
+      // Player object
+      const player = {
+        x: (CANVAS_WIDTH - PLAYER_WIDTH) / 4, // left quarter
+        y: CANVAS_HEIGHT - PLAYER_HEIGHT - 10,
+        width: PLAYER_WIDTH,
+        height: PLAYER_HEIGHT,
+        color: '#0f0',
+        score: 0,
+        lastBulletTime: 0,
+        bulletCooldown: 500 // ms
+      };
+
+      // Bot object
+      const bot = {
+        x: (CANVAS_WIDTH - PLAYER_WIDTH) * 3/4, // right quarter
+        y: CANVAS_HEIGHT - PLAYER_HEIGHT - 10,
+        width: PLAYER_WIDTH,
+        height: PLAYER_HEIGHT,
+        color: '#00f',
+        score: 0,
+        lastBulletTime: 0,
+        bulletCooldown: 800 // ms
+      };
+
+      // Bullet arrays
+      const playerBullets = [];
+      const botBullets = [];
+
+      // Invader constructor
+      function Invader(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = INVADER_WIDTH;
+        this.height = INVADER_HEIGHT;
+        this.alive = true;
+      }
+
+      // Create a 2D array of invaders
+      const invaders = [];
+      for (let row = 0; row < INVADER_ROWS; row++) {
+        invaders[row] = [];
+        for (let col = 0; col < INVADER_COLS; col++) {
+          const x = INVADER_OFFSET_LEFT + col * (INVADER_WIDTH + INVADER_PADDING);
+          const y = INVADER_OFFSET_TOP + row * (INVADER_HEIGHT + INVADER_PADDING);
+          invaders[row][col] = new Invader(x, y);
+        }
+      }
+
+      // Invader movement state
+      let invaderDirection = 1; // 1 = right, -1 = left
+      let invaderSpeedX = INVADER_SPEED_X;
+
+      // Event listeners for keyboard input
+      document.addEventListener('keydown', keyDownHandler);
+      document.addEventListener('keyup', keyUpHandler);
+
+      function keyDownHandler(e) {
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+          rightPressed = true;
+        } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+          leftPressed = true;
+        } else if (e.code === 'Space') {
+          spacePressed = true;
+        }
+      }
+
+      function keyUpHandler(e) {
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+          rightPressed = false;
+        } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+          leftPressed = false;
+        } else if (e.code === 'Space') {
+          spacePressed = false;
+        }
+      }
+
+      // Draw player or bot rectangle
+      function drawEntity(entity) {
+        ctx.fillStyle = entity.color;
+        ctx.fillRect(entity.x, entity.y, entity.width, entity.height);
+      }
+
+      // Draw bullets
+      function drawBullets() {
+        ctx.fillStyle = '#fff';
+        playerBullets.forEach(bullet => {
+          ctx.fillRect(bullet.x, bullet.y, BULLET_WIDTH, BULLET_HEIGHT);
+        });
+        ctx.fillStyle = '#ff0';
+        botBullets.forEach(bullet => {
+          ctx.fillRect(bullet.x, bullet.y, BULLET_WIDTH, BULLET_HEIGHT);
+        });
+      }
+
+      // Draw invaders
+      function drawInvaders() {
+        ctx.fillStyle = '#f00';
+        for (let row = 0; row < INVADER_ROWS; row++) {
+          for (let col = 0; col < INVADER_COLS; col++) {
+            const inv = invaders[row][col];
+            if (inv.alive) {
+              ctx.fillRect(inv.x, inv.y, inv.width, inv.height);
+            }
+          }
+        }
+      }
+
+      // Update player based on input
+      function updatePlayer() {
+        if (rightPressed && player.x + player.width < CANVAS_WIDTH) {
+          player.x += PLAYER_SPEED;
+        }
+        if (leftPressed && player.x > 0) {
+          player.x -= PLAYER_SPEED;
+        }
+      }
+
+      // Bot AI movement: track average x of alive invaders
+      function updateBot() {
+        // Collect all alive invaders
+        const aliveInvs = [];
+        for (let row = 0; row < INVADER_ROWS; row++) {
+          for (let col = 0; col < INVADER_COLS; col++) {
+            if (invaders[row][col].alive) {
+              aliveInvs.push(invaders[row][col]);
+            }
+          }
+        }
+        if (aliveInvs.length === 0) return;
+
+        // Compute average x position
+        const avgX = aliveInvs.reduce((sum, inv) => sum + inv.x + inv.width/2, 0) / aliveInvs.length;
+
+        // Move bot toward avgX
+        if (bot.x + bot.width/2 < avgX - 5 && bot.x + bot.width < CANVAS_WIDTH) {
+          bot.x += BOT_SPEED;
+        } else if (bot.x + bot.width/2 > avgX + 5 && bot.x > 0) {
+          bot.x -= BOT_SPEED;
+        }
+
+        // Handle bot shooting
+        const now = Date.now();
+        if (now - bot.lastBulletTime > bot.bulletCooldown) {
+          botBullets.push({
+            x: bot.x + bot.width / 2 - BULLET_WIDTH / 2,
+            y: bot.y,
+            width: BULLET_WIDTH,
+            height: BULLET_HEIGHT
+          });
+          bot.lastBulletTime = now;
+        }
+      }
+
+      // Handle firing player bullets
+      function updatePlayerBullets(deltaTime) {
+        if (spacePressed) {
+          const now = Date.now();
+          if (now - player.lastBulletTime > player.bulletCooldown) {
+            playerBullets.push({
+              x: player.x + player.width / 2 - BULLET_WIDTH / 2,
+              y: player.y,
+              width: BULLET_WIDTH,
+              height: BULLET_HEIGHT
+            });
+            player.lastBulletTime = now;
+          }
+        }
+
+        // Move player bullets
+        playerBullets.forEach((bullet, index) => {
+          bullet.y -= BULLET_SPEED;
+          // Remove bullets that leave the canvas
+          if (bullet.y + bullet.height < 0) {
+            playerBullets.splice(index, 1);
+          }
+        });
+      }
+
+      // Move bot bullets
+      function updateBotBullets() {
+        botBullets.forEach((bullet, index) => {
+          bullet.y -= BULLET_SPEED;
+          if (bullet.y + bullet.height < 0) {
+            botBullets.splice(index, 1);
+          }
+        });
+      }
+
+      // Update invaders movement and check for edge collision
+      function updateInvaders() {
+        let shouldDrop = false;
+
+        // Check edges
+        for (let row = 0; row < INVADER_ROWS; row++) {
+          for (let col = 0; col < INVADER_COLS; col++) {
+            const inv = invaders[row][col];
+            if (inv.alive) {
+              if (inv.x + inv.width >= CANVAS_WIDTH && invaderDirection === 1) {
+                shouldDrop = true;
+              } else if (inv.x <= 0 && invaderDirection === -1) {
+                shouldDrop = true;
+              }
+            }
+          }
+        }
+
+        // Move or drop
+        if (shouldDrop) {
+          invaderDirection *= -1;
+          for (let row = 0; row < INVADER_ROWS; row++) {
+            for (let col = 0; col < INVADER_COLS; col++) {
+              const inv = invaders[row][col];
+              if (inv.alive) {
+                inv.y += INVADER_DROP_Y;
+                // Check if invaders reach the player zone → Game Over
+                if (inv.y + inv.height >= player.y) {
+                  gameOver = true;
+                }
+              }
+            }
+          }
+        } else {
+          for (let row = 0; row < INVADER_ROWS; row++) {
+            for (let col = 0; col < INVADER_COLS; col++) {
+              const inv = invaders[row][col];
+              if (inv.alive) {
+                inv.x += invaderSpeedX * invaderDirection;
+              }
+            }
+          }
+        }
+      }
+
+      // Check for bullet-invader collisions
+      function checkCollisions() {
+        // Player bullets vs invaders
+        playerBullets.forEach((bullet, bIndex) => {
+          for (let row = 0; row < INVADER_ROWS; row++) {
+            for (let col = 0; col < INVADER_COLS; col++) {
+              const inv = invaders[row][col];
+              if (inv.alive) {
+                if (
+                  bullet.x < inv.x + inv.width &&
+                  bullet.x + bullet.width > inv.x &&
+                  bullet.y < inv.y + inv.height &&
+                  bullet.y + bullet.height > inv.y
+                ) {
+                  // Collision detected
+                  inv.alive = false;
+                  playerBullets.splice(bIndex, 1);
+                  player.score += 1;
+                  playerScoreEl.textContent = `You: ${player.score}`;
+                  return; // Exit nested loops
+                }
+              }
+            }
+          }
+        });
+
+        // Bot bullets vs invaders
+        botBullets.forEach((bullet, bIndex) => {
+          for (let row = 0; row < INVADER_ROWS; row++) {
+            for (let col = 0; col < INVADER_COLS; col++) {
+              const inv = invaders[row][col];
+              if (inv.alive) {
+                if (
+                  bullet.x < inv.x + inv.width &&
+                  bullet.x + bullet.width > inv.x &&
+                  bullet.y < inv.y + inv.height &&
+                  bullet.y + bullet.height > inv.y
+                ) {
+                  // Collision detected
+                  inv.alive = false;
+                  botBullets.splice(bIndex, 1);
+                  bot.score += 1;
+                  botScoreEl.textContent = `Bot: ${bot.score}`;
+                  return; // Exit nested loops
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Draw Game Over or Winner text
+      function drawEndText(text) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(text, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+      }
+
+      // Main game loop
+      let lastTime = 0;
+      function gameLoop(timeStamp) {
+        if (gameOver) {
+          const winnerText = player.score > bot.score
+            ? 'YOU WIN!'
+            : player.score < bot.score
+            ? 'BOT WINS!'
+            : 'TIE GAME';
+          drawEndText(winnerText);
+          return;
+        }
+
+        const deltaTime = timeStamp - lastTime;
+        lastTime = timeStamp;
+
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        updatePlayer();
+        updatePlayerBullets(deltaTime);
+        updateBot();
+        updateBotBullets();
+        updateInvaders();
+        checkCollisions();
+
+        drawEntity(player);
+        drawEntity(bot);
+        drawBullets();
+        drawInvaders();
+
+        // Check win condition: all invaders dead
+        let allDead = true;
+        for (let row = 0; row < INVADER_ROWS; row++) {
+          for (let col = 0; col < INVADER_COLS; col++) {
+            if (invaders[row][col].alive) {
+              allDead = false;
+              break;
+            }
+          }
+          if (!allDead) break;
+        }
+        if (allDead) {
+          gameOver = true;
+        }
+
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start the game loop
+      requestAnimationFrame(gameLoop);
+    })();
+  </script>
+</body>
+</html>

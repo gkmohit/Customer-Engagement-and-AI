@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Customer Engagement and Artificial Intelligence</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+    header p {
+      font-size: 1rem;
+      color: #555;
+    }
+    #folderListContainer {
+      width: 100%;
+      max-width: 600px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+    }
+    #folderListContainer h2 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      color: #34495e;
+      border-bottom: 2px solid #ecf0f1;
+      padding-bottom: 8px;
+    }
+    #folderList {
+      list-style: none;
+    }
+    #folderList li {
+      margin-bottom: 12px;
+    }
+    #folderList li a {
+      text-decoration: none;
+      font-size: 1.1rem;
+      color: #2980b9;
+      transition: color 0.2s;
+    }
+    #folderList li a:hover {
+      color: #1c5980;
+    }
+    /* Responsive */
+    @media (max-width: 480px) {
+      header h1 {
+        font-size: 2rem;
+      }
+      #folderListContainer {
+        padding: 15px;
+      }
+      #folderListContainer h2 {
+        font-size: 1.3rem;
+      }
+      #folderList li a {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Customer Engagement and Artificial Intelligence</h1>
+    <p>Select a lecture below to view its content.</p>
+  </header>
+
+  <div id="folderListContainer">
+    <h2>Lecture Folders</h2>
+    <ul id="folderList">
+      <!-- Folder links will be injected here by JavaScript -->
+    </ul>
+  </div>
+
+  <script>
+    /**
+     * List of folder names. Each folder should contain its own index.html.
+     * When you add a new lecture folder, append its folder name to this array.
+     */
+    const folders = [
+      "Lecture1",
+      "Lecture2",
+      "Lecture3"
+      // Add new lecture folder names here, e.g. "Lecture4"
+    ];
+
+    const folderListElement = document.getElementById('folderList');
+
+    function buildFolderList() {
+      // Clear any existing items
+      folderListElement.innerHTML = '';
+
+      if (folders.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No lectures available yet.';
+        li.style.color = '#999';
+        folderListElement.appendChild(li);
+        return;
+      }
+
+      // Create one <li> + <a> per folder
+      folders.forEach(folderName => {
+        const li = document.createElement('li');
+        const link = document.createElement('a');
+        // Assume each folder has an index.html (e.g., "Lecture1/index.html")
+        link.href = `${folderName}/index.html`;
+        link.textContent = folderName;
+        link.target = '_self';
+        li.appendChild(link);
+        folderListElement.appendChild(li);
+      });
+    }
+
+    // Build the list on page load
+    document.addEventListener('DOMContentLoaded', buildFolderList);
+  </script>
+</body>
+</html>

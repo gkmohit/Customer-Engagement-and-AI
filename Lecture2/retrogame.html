@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Retro Jumper</title>
+<style>
+body {
+    background-color: #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Press Start 2P', cursive; /* Using a retro font if available, otherwise a monospace fallback */
+}
+
+#game-container {
+    width: 600px;
+    height: 400px;
+    background-color: #000;
+    border: 5px solid #0f0;
+    position: relative;
+    overflow: hidden;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
+#player {
+    width: 30px;
+    height: 30px;
+    background-color: #0f0;
+    position: absolute;
+    bottom: 0;
+    left: 50px;
+}
+
+.obstacle {
+    width: 20px;
+    height: 40px;
+    background-color: #f00;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+#score {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #0f0;
+    font-size: 20px;
+}
+
+#game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #f00;
+    font-size: 30px;
+    text-align: center;
+    display: none;
+    line-height: 1.5;
+}
+
+#game-over button {
+    background-color: #0f0;
+    color: #000;
+    border: 2px solid #0f0;
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-family: 'Press Start 2P', cursive;
+}
+
+@font-face {
+    font-family: 'Press Start 2P';
+    src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap') format('truetype');
+}
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="player"></div>
+    <div id="score">SCORE: 0</div>
+    <div id="game-over">
+        GAME OVER!<br>
+        <span id="final-score">SCORE: 0</span><br>
+        <button id="restart-button">RESTART</button>
+    </div>
+</div>
+
+<script>
+const player = document.getElementById('player');
+const gameContainer = document.getElementById('game-container');
+const scoreDisplay = document.getElementById('score');
+const gameOverDisplay = document.getElementById('game-over');
+const finalScoreDisplay = document.getElementById('final-score');
+const restartButton = document.getElementById('restart-button');
+
+let playerBottom = 0;
+let playerLeft = 50;
+let isJumping = false;
+let gravity = 0.9;
+let score = 0;
+let gameOver = false;
+let obstacleInterval;
+let gameLoopInterval;
+let obstacleSpeed = 5;
+
+function startGame() {
+    playerBottom = 0;
+    playerLeft = 50;
+    isJumping = false;
+    score = 0;
+    gameOver = false;
+    scoreDisplay.textContent = 'SCORE: 0';
+    gameOverDisplay.style.display = 'none';
+
+    // Remove existing obstacles
+    document.querySelectorAll('.obstacle').forEach(obstacle => obstacle.remove());
+
+    player.style.bottom = playerBottom + 'px';
+    player.style.left = playerLeft + 'px';
+
+    document.addEventListener('keydown', control);
+    restartButton.addEventListener('click', startGame);
+
+    gameLoopInterval = setInterval(gameLoop, 20);
+    obstacleInterval = setInterval(generateObstacle, 2000); // Generate obstacle every 2 seconds
+}
+
+function jump() {
+    if (isJumping) return;
+    isJumping = true;
+    let jumpHeight = 150;
+    let jumpSpeed = 10;
+    let initialBottom = playerBottom;
+
+    let upTimerId = setInterval(() => {
+        if (playerBottom >= initialBottom + jumpHeight) {
+            clearInterval(upTimerId);
+            let downTimerId = setInterval(() => {
+                if (playerBottom <= initialBottom) {
+                    clearInterval(downTimerId);
+                    isJumping = false;
+                    playerBottom = initialBottom; // Ensure it snaps to ground
+                }
+                playerBottom -= jumpSpeed * gravity;
+                player.style.bottom = playerBottom + 'px';
+            }, 20);
+        }
+        playerBottom += jumpSpeed;
+        player.style.bottom = playerBottom + 'px';
+    }, 20);
+}
+
+function control(e) {
+    if (e.code === 'Space' && !gameOver) {
+        jump();
+    }
+}
+
+function generateObstacle() {
+    if (gameOver) return;
+
+    let obstacleRight = 0;
+    let obstacleBottom = 0; // Obstacles always start at the bottom
+    let obstacle = document.createElement('div');
+    obstacle.classList.add('obstacle');
+    obstacle.style.bottom = obstacleBottom + 'px';
+    gameContainer.appendChild(obstacle);
+
+    let obstacleTimerId = setInterval(() => {
+        if (gameOver) {
+            clearInterval(obstacleTimerId);
+            return;
+        }
+
+        obstacleRight += obstacleSpeed;
+        obstacle.style.right = obstacleRight + 'px';
+
+        if (obstacleRight > gameContainer.offsetWidth) {
+            clearInterval(obstacleTimerId);
+            obstacle.remove();
+            score++;
+            scoreDisplay.textContent = 'SCORE: ' + score;
+            // Increase speed every 10 points
+            if (score % 10 === 0 && score > 0) {
+                obstacleSpeed += 0.5;
+            }
+        }
+
+        // Collision detection
+        // Player's right edge: playerLeft + player.offsetWidth
+        // Player's left edge: playerLeft
+        // Player's top edge: playerBottom + player.offsetHeight
+        // Player's bottom edge: playerBottom
+
+        // Obstacle's left edge: gameContainer.offsetWidth - obstacleRight - obstacle.offsetWidth
+        // Obstacle's right edge: gameContainer.offsetWidth - obstacleRight
+        // Obstacle's top edge: obstacleBottom + obstacle.offsetHeight
+        // Obstacle's bottom edge: obstacleBottom
+
+        const playerRect = player.getBoundingClientRect();
+        const obstacleRect = obstacle.getBoundingClientRect();
+        const gameContainerRect = gameContainer.getBoundingClientRect();
+
+        // Adjust positions relative to gameContainer for simpler logic
+        const playerX = playerRect.left - gameContainerRect.left;
+        const playerY = playerRect.top - gameContainerRect.top;
+        const obstacleX = obstacleRect.left - gameContainerRect.left;
+        const obstacleY = obstacleRect.top - gameContainerRect.top;
+
+        if (
+            playerX < obstacleX + obstacle.offsetWidth &&
+            playerX + player.offsetWidth > obstacleX &&
+            playerY < obstacleY + obstacle.offsetHeight &&
+            playerY + player.offsetHeight > obstacleY
+        ) {
+            endGame();
+        }
+
+    }, 20);
+}
+
+function endGame() {
+    gameOver = true;
+    clearInterval(gameLoopInterval);
+    clearInterval(obstacleInterval);
+    document.removeEventListener('keydown', control); // Stop listening for jump
+    finalScoreDisplay.textContent = 'SCORE: ' + score;
+    gameOverDisplay.style.display = 'block';
+}
+
+startGame(); // Start the game on load
+</script>
+
+</body>
+</html>

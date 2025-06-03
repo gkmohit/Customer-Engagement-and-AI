@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Space Invaders by Pinnacle Tales</title>
+  <style>
+    /* Basic reset and centering */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #1B263B; /* Dark navy from logo palette */
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #F7E9D7; /* Light peach for text */
+      font-family: 'Arial', sans-serif;
+      position: relative;
+    }
+    canvas {
+      background-color: #0F1C34; /* Slightly lighter navy */
+      display: block;
+      border: 2px solid #F7E9D7; /* Light peach border */
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      letter-spacing: 2px;
+      display: flex;
+      gap: 20px;
+      color: #F7E9D7; /* Light peach */
+    }
+    #scoreBoard div {
+      margin: 0 10px;
+    }
+    /* Overlay styling */
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 600px;
+      height: 600px;
+      background-color: rgba(27, 38, 59, 0.9); /* Semi‐transparent dark navy */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #F7E9D7; /* Light peach */
+      text-align: center;
+      padding: 20px;
+    }
+    #overlay img {
+      width: 200px;
+      height: auto;
+      margin-bottom: 20px;
+    }
+    #overlay h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    #overlay p {
+      font-size: 16px;
+      margin-top: 10px;
+      letter-spacing: 1.5px;
+    }
+    #overlay label,
+    #overlay select {
+      font-size: 16px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="scoreBoard"></div>
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+  <!-- Single overlay for both start and game-over states -->
+  <div id="overlay">
+    <!-- Content is populated dynamically -->
+  </div>
+
+  <script>
+    (function() {
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const scoreBoard = document.getElementById('scoreBoard');
+      const overlay = document.getElementById('overlay');
+
+      // Game constants
+      const CANVAS_WIDTH = canvas.width;
+      const CANVAS_HEIGHT = canvas.height;
+      const PLAYER_WIDTH = 40;
+      const PLAYER_HEIGHT = 20;
+      const PLAYER_SPEED = 5;
+      const BOT_SPEED = 3;
+      const BULLET_WIDTH = 4;
+      const BULLET_HEIGHT = 10;
+      const BULLET_SPEED = 7;
+      const INVADER_ROWS = 5;
+      const INVADER_COLS = 10;
+      const INVADER_WIDTH = 30;
+      const INVADER_HEIGHT = 20;
+      const INVADER_PADDING = 15;
+      const INVADER_OFFSET_TOP = 50;
+      const INVADER_OFFSET_LEFT = 50;
+      const INVADER_SPEED_X = 1;
+      const INVADER_DROP_Y = 20;
+
+      // Color palette
+      const PLAYER_COLOR = '#30D5C8'; // Mint
+      const BOT_COLOR = '#FF6F61';    // Coral/peach
+      const PLAYER_BULLET_COLOR = '#F7E9D7'; // Light peach
+      const BOT_BULLET_COLOR = '#F4A261';    // Darker peach
+      const INVADER_COLOR = '#E76F51';       // Coral/red
+
+      let gameState = 'init'; // 'init', 'running', 'gameOver'
+      let numBots = 1;
+      let rightPressed = false;
+      let leftPressed = false;
+      let spacePressed = false;
+      let gameOver = false;
+
+      // Player object
+      let player;
+
+      // Array of bot objects
+      let bots = [];
+
+      // Bullet arrays
+      let playerBullets = [];
+      let botBullets = []; // Array of arrays: botBullets[i] is array for bot i
+
+      // Invaders array
+      let invaders = [];
+      let invaderDirection = 1; // 1 = right, -1 = left
+      let invaderSpeedX = INVADER_SPEED_X;
+
+      // Score elements references
+      let playerScoreEl;
+      let botScoreEls = []; // Array of elements for each bot
+
+      // Initialization for overlay content (start screen)
+      function showStartOverlay() {
+        gameState = 'init';
+        overlay.innerHTML = `
+          <img src="Pinnacle Tales Logo - Empty Background.png" alt="Pinnacle Tales Logo" />
+          <h1>Welcome to Space Invaders</h1>
+          <p>by Pinnacle Tales</p>
+          <label for="botCount">Number of Bots:</label>
+          <select id="botCount">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+          <p>Press ENTER to Start</p>
+        `;
+        overlay.style.display = 'flex';
+      }
+
+      // Setup game variables before starting
+      function startGame() {
+        // Read number of bots from select
+        const select = document.getElementById('botCount');
+        numBots = parseInt(select.value, 10);
+
+        // Reset flags
+        gameOver = false;
+        rightPressed = false;
+        leftPressed = false;
+        spacePressed = false;
+        invaderDirection = 1;
+
+        // Initialize player
+        player = {
+          x: (CANVAS_WIDTH - PLAYER_WIDTH) / 2,
+          y: CANVAS_HEIGHT - PLAYER_HEIGHT - 10,
+          width: PLAYER_WIDTH,
+          height: PLAYER_HEIGHT,
+          color: PLAYER_COLOR,
+          score: 0,
+          lastBulletTime: 0,
+          bulletCooldown: 500
+        };
+
+        // Initialize bots array
+        bots = [];
+        botBullets = [];
+        for (let i = 0; i < numBots; i++) {
+          // Spread bots evenly across bottom
+          const xPos = ((i + 1) * CANVAS_WIDTH / (numBots + 1)) - PLAYER_WIDTH / 2;
+          bots.push({
+            x: xPos,
+            y: CANVAS_HEIGHT - PLAYER_HEIGHT - 10,
+            width: PLAYER_WIDTH,
+            height: PLAYER_HEIGHT,
+            color: BOT_COLOR,
+            score: 0,
+            lastBulletTime: 0,
+            bulletCooldown: 800
+          });
+          botBullets.push([]);
+        }
+
+        // Initialize player bullets
+        playerBullets = [];
+
+        // Initialize invaders
+        invaders = [];
+        for (let row = 0; row < INVADER_ROWS; row++) {
+          invaders[row] = [];
+          for (let col = 0; col < INVADER_COLS; col++) {
+            const x = INVADER_OFFSET_LEFT + col * (INVADER_WIDTH + INVADER_PADDING);
+            const y = INVADER_OFFSET_TOP + row * (INVADER_HEIGHT + INVADER_PADDING);
+            invaders[row][col] = { x, y, width: INVADER_WIDTH, height: INVADER_HEIGHT, alive: true };
+          }
+        }
+
+        // Build scoreboard
+        buildScoreBoard();
+
+        // Hide overlay and begin loop
+        overlay.style.display = 'none';
+        gameState = 'running';
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Build / reset scoreboard HTML and references
+      function buildScoreBoard() {
+        scoreBoard.innerHTML = '';
+        // Player score element
+        playerScoreEl = document.createElement('div');
+        playerScoreEl.textContent = `You: 0`;
+        scoreBoard.appendChild(playerScoreEl);
+
+        // Bot score elements
+        botScoreEls = [];
+        for (let i = 0; i < numBots; i++) {
+          const botEl = document.createElement('div');
+          botEl.textContent = `Bot ${i + 1}: 0`;
+          scoreBoard.appendChild(botEl);
+          botScoreEls.push(botEl);
+        }
+      }
+
+      // Show result overlay after game over
+      function showResultOverlay() {
+        gameState = 'gameOver';
+        // Determine highest score
+        const scores = bots.map(bot => bot.score);
+        scores.push(player.score);
+        const maxScore = Math.max(...scores);
+
+        // Count how many have maxScore
+        const winners = [];
+        if (player.score === maxScore) winners.push('You');
+        bots.forEach((bot, idx) => {
+          if (bot.score === maxScore) winners.push(`Bot ${idx + 1}`);
+        });
+
+        // Build result message
+        let resultMsg = '';
+        if (winners.length === 1) {
+          resultMsg = winners[0] === 'You'
+            ? `You Win! (${player.score} kills)`
+            : `${winners[0]} Wins! (${bots[parseInt(winners[0].split(' ')[1], 10) - 1].score} kills)`;
+        } else {
+          // Tie scenario
+          resultMsg = `Tie between ${winners.join(' & ')}! (Score: ${maxScore})`;
+        }
+
+        // Build detailed scores list
+        let scoreList = `<p>Final Scores:</p><ul style="list-style:none; padding:0; text-align:left;">`;
+        scoreList += `<li>You: ${player.score}</li>`;
+        bots.forEach((bot, idx) => {
+          scoreList += `<li>Bot ${idx + 1}: ${bot.score}</li>`;
+        });
+        scoreList += `</ul>`;
+
+        overlay.innerHTML = `
+          <img src="Pinnacle Tales Logo - Empty Background.png" alt="Pinnacle Tales Logo" />
+          <h1>${resultMsg}</h1>
+          ${scoreList}
+          <p>Press ENTER to Play Again</p>
+        `;
+        overlay.style.display = 'flex';
+      }
+
+      // Event listeners for keyboard
+      document.addEventListener('keydown', e => {
+        if (gameState === 'init' && e.code === 'Enter') {
+          startGame();
+        } else if (gameState === 'running') {
+          if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+            rightPressed = true;
+          } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+            leftPressed = true;
+          } else if (e.code === 'Space') {
+            spacePressed = true;
+          }
+        } else if (gameState === 'gameOver' && e.code === 'Enter') {
+          showStartOverlay();
+        }
+      });
+      document.addEventListener('keyup', e => {
+        if (gameState !== 'running') return;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+          rightPressed = false;
+        } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+          leftPressed = false;
+        } else if (e.code === 'Space') {
+          spacePressed = false;
+        }
+      });
+
+      // Draw a rectangle for player or bot
+      function drawEntity(entity) {
+        ctx.fillStyle = entity.color;
+        ctx.fillRect(entity.x, entity.y, entity.width, entity.height);
+      }
+
+      // Draw bullets
+      function drawBullets() {
+        ctx.fillStyle = PLAYER_BULLET_COLOR;
+        playerBullets.forEach(bullet => {
+          ctx.fillRect(bullet.x, bullet.y, BULLET_WIDTH, BULLET_HEIGHT);
+        });
+        ctx.fillStyle = BOT_BULLET_COLOR;
+        botBullets.forEach(arr => {
+          arr.forEach(bullet => {
+            ctx.fillRect(bullet.x, bullet.y, BULLET_WIDTH, BULLET_HEIGHT);
+          });
+        });
+      }
+
+      // Draw invaders
+      function drawInvaders() {
+        ctx.fillStyle = INVADER_COLOR;
+        for (let row = 0; row < INVADER_ROWS; row++) {
+          for (let col = 0; col < INVADER_COLS; col++) {
+            const inv = invaders[row][col];
+            if (inv.alive) {
+              ctx.fillRect(inv.x, inv.y, inv.width, inv.height);
+            }
+          }
+        }
+      }
+
+      // Update player movement
+      function updatePlayer() {
+        if (rightPressed && player.x + player.width < CANVAS_WIDTH) {
+          player.x += PLAYER_SPEED;
+        }
+        if (leftPressed && player.x > 0) {
+          player.x -= PLAYER_SPEED;
+        }
+      }
+
+      // Update player bullets
+      function updatePlayerBullets() {
+        if (spacePressed) {
+          const now = Date.now();
+          if (now - player.lastBulletTime > player.bulletCooldown) {
+            playerBullets.push({
+              x: player.x + player.width / 2 - BULLET_WIDTH / 2,
+              y: player.y,
+              width: BULLET_WIDTH,
+              height: BULLET_HEIGHT
+            });
+            player.lastBulletTime = now;
+          }
+        }
+        playerBullets.forEach((bullet, idx) => {
+          bullet.y -= BULLET_SPEED;
+          if (bullet.y + bullet.height < 0) {
+            playerBullets.splice(idx, 1);
+          }
+        });
+      }
+
+      // Update each bot: movement and shooting
+      function updateBots() {
+        // Gather alive invaders
+        const aliveInvs = [];
+        for (let row = 0; row < INVADER_ROWS; row++) {
+          for (let col = 0; col < INVADER_COLS; col++) {
+            if (invaders[row][col].alive) {
+              aliveInvs.push(invaders[row][col]);
+            }
+          }
+        }
+        if (aliveInvs.length === 0) return;
+
+        // Compute average X of invaders
+        const avgX = aliveInvs.reduce((sum, inv) => sum + inv.x + inv.width / 2, 0) / aliveInvs.length;
+
+        bots.forEach((bot, bIdx) => {
+          // Move toward average X
+          if (bot.x + bot.width / 2 < avgX - 5 && bot.x + bot.width < CANVAS_WIDTH) {
+            bot.x += BOT_SPEED;
+          } else if (bot.x + bot.width / 2 > avgX + 5 && bot.x > 0) {
+            bot.x -= BOT_SPEED;
+          }
+          // Shooting logic
+          const now = Date.now();
+          if (now - bot.lastBulletTime > bot.bulletCooldown) {
+            botBullets[bIdx].push({
+              x: bot.x + bot.width / 2 - BULLET_WIDTH / 2,
+              y: bot.y,
+              width: BULLET_WIDTH,
+              height: BULLET_HEIGHT
+            });
+            bot.lastBulletTime = now;
+          }
+          // Move bot bullets
+          botBullets[bIdx].forEach((bullet, idx) => {
+            bullet.y -= BULLET_SPEED;
+            if (bullet.y + bullet.height < 0) {
+              botBullets[bIdx].splice(idx, 1);
+            }
+          });
+        });
+      }
+
+      // Update invaders movement
+      function updateInvaders() {
+        let shouldDrop = false;
+        for (let row = 0; row < INVADER_ROWS; row++) {
+          for (let col = 0; col < INVADER_COLS; col++) {
+            const inv = invaders[row][col];
+            if (inv.alive) {
+              if (inv.x + inv.width >= CANVAS_WIDTH && invaderDirection === 1) {
+                shouldDrop = true;
+              } else if (inv.x <= 0 && invaderDirection === -1) {
+                shouldDrop = true;
+              }
+            }
+          }
+        }
+        if (shouldDrop) {
+          invaderDirection *= -1;
+          for (let row = 0; row < INVADER_ROWS; row++) {
+            for (let col = 0; col < INVADER_COLS; col++) {
+              const inv = invaders[row][col];
+              if (inv.alive) {
+                inv.y += INVADER_DROP_Y;
+                if (inv.y + inv.height >= player.y) {
+                  gameOver = true;
+                }
+              }
+            }
+          }
+        } else {
+          for (let row = 0; row < INVADER_ROWS; row++) {
+            for (let col = 0; col < INVADER_COLS; col++) {
+              const inv = invaders[row][col];
+              if (inv.alive) {
+                inv.x += invaderSpeedX * invaderDirection;
+              }
+            }
+          }
+        }
+      }
+
+      // Check collisions and update scores
+      function checkCollisions() {
+        // Player bullets vs invaders
+        playerBullets.forEach((bullet, bIdx) => {
+          for (let row = 0; row < INVADER_ROWS; row++) {
+            for (let col = 0; col < INVADER_COLS; col++) {
+              const inv = invaders[row][col];
+              if (inv.alive &&
+                  bullet.x < inv.x + inv.width &&
+                  bullet.x + bullet.width > inv.x &&
+                  bullet.y < inv.y + inv.height &&
+                  bullet.y + bullet.height > inv.y) {
+                inv.alive = false;
+                playerBullets.splice(bIdx, 1);
+                player.score += 1;
+                playerScoreEl.textContent = `You: ${player.score}`;
+                return;
+              }
+            }
+          }
+        });
+
+        // Bot bullets vs invaders
+        botBullets.forEach((arr, botIdx) => {
+          arr.forEach((bullet, bIdx) => {
+            for (let row = 0; row < INVADER_ROWS; row++) {
+              for (let col = 0; col < INVADER_COLS; col++) {
+                const inv = invaders[row][col];
+                if (inv.alive &&
+                    bullet.x < inv.x + inv.width &&
+                    bullet.x + bullet.width > inv.x &&
+                    bullet.y < inv.y + inv.height &&
+                    bullet.y + bullet.height > inv.y) {
+                  inv.alive = false;
+                  botBullets[botIdx].splice(bIdx, 1);
+                  bots[botIdx].score += 1;
+                  botScoreEls[botIdx].textContent = `Bot ${botIdx + 1}: ${bots[botIdx].score}`;
+                  return;
+                }
+              }
+            }
+          });
+        });
+      }
+
+      // Draw Game Over/Winner text (unused—results are shown via overlay)
+      function drawEndText(text) {
+        ctx.fillStyle = '#F7E9D7';
+        ctx.font = '48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(text, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+      }
+
+      // Main game loop
+      let lastTime = 0;
+      function gameLoop(timeStamp) {
+        if (gameState !== 'running') return;
+
+        if (gameOver) {
+          showResultOverlay();
+          return;
+        }
+
+        const deltaTime = timeStamp - lastTime;
+        lastTime = timeStamp;
+
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        updatePlayer();
+        updatePlayerBullets();
+        updateBots();
+        updateInvaders();
+        checkCollisions();
+
+        // Draw all entities
+        drawEntity(player);
+        bots.forEach(bot => drawEntity(bot));
+        drawBullets();
+        drawInvaders();
+
+        // Check win condition
+        let allDead = true;
+        for (let row = 0; row < INVADER_ROWS; row++) {
+          for (let col = 0; col < INVADER_COLS; col++) {
+            if (invaders[row][col].alive) {
+              allDead = false;
+              break;
+            }
+          }
+          if (!allDead) break;
+        }
+        if (allDead) {
+          gameOver = true;
+        }
+
+        requestAnimationFrame(gameLoop);
+      }
+
+      // On load, show the start overlay
+      showStartOverlay();
+    })();
+  </script>
+</body>
+</html>
