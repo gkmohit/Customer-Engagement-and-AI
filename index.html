@@ -26,56 +26,68 @@
     }
     header h1 {
       font-size: 2.5rem;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
       color: #2c3e50;
     }
-    header p {
-      font-size: 1rem;
+    header h2 {
+      font-size: 1.25rem;
+      font-weight: normal;
       color: #555;
+      margin-bottom: 20px;
     }
-    #folderListContainer {
+    #tileContainer {
       width: 100%;
-      max-width: 600px;
+      max-width: 800px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+    }
+    .tile {
       background-color: #fff;
       border-radius: 8px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-      padding: 20px;
-    }
-    #folderListContainer h2 {
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-      color: #34495e;
-      border-bottom: 2px solid #ecf0f1;
-      padding-bottom: 8px;
-    }
-    #folderList {
-      list-style: none;
-    }
-    #folderList li {
-      margin-bottom: 12px;
-    }
-    #folderList li a {
+      overflow: hidden;
       text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      height: 120px;
+      text-align: center;
+    }
+    .tile:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+    }
+    .tile h3 {
       font-size: 1.1rem;
+      margin-bottom: 8px;
       color: #2980b9;
-      transition: color 0.2s;
     }
-    #folderList li a:hover {
-      color: #1c5980;
+    .tile p {
+      font-size: 0.95rem;
+      color: #555;
     }
-    /* Responsive */
+    /* Responsive adjustments */
     @media (max-width: 480px) {
       header h1 {
         font-size: 2rem;
       }
-      #folderListContainer {
-        padding: 15px;
-      }
-      #folderListContainer h2 {
-        font-size: 1.3rem;
-      }
-      #folderList li a {
+      header h2 {
         font-size: 1rem;
+      }
+      .tile {
+        padding: 15px;
+        height: 100px;
+      }
+      .tile h3 {
+        font-size: 1rem;
+      }
+      .tile p {
+        font-size: 0.85rem;
       }
     }
   </style>
@@ -83,14 +95,12 @@
 <body>
   <header>
     <h1>Customer Engagement and Artificial Intelligence</h1>
+    <h2>Professor: Victor del Rosal</h2>
     <p>Select a lecture below to view its content.</p>
   </header>
 
-  <div id="folderListContainer">
-    <h2>Lecture Folders</h2>
-    <ul id="folderList">
-      <!-- Folder links will be injected here by JavaScript -->
-    </ul>
+  <div id="tileContainer">
+    <!-- Tiles will be injected here by JavaScript -->
   </div>
 
   <script>
@@ -105,35 +115,36 @@
       // Add new lecture folder names here, e.g. "Lecture4"
     ];
 
-    const folderListElement = document.getElementById('folderList');
+    const tileContainer = document.getElementById('tileContainer');
 
-    function buildFolderList() {
-      // Clear any existing items
-      folderListElement.innerHTML = '';
+    function buildTiles() {
+      // Clear any existing tiles
+      tileContainer.innerHTML = '';
 
       if (folders.length === 0) {
-        const li = document.createElement('li');
-        li.textContent = 'No lectures available yet.';
-        li.style.color = '#999';
-        folderListElement.appendChild(li);
+        const message = document.createElement('p');
+        message.textContent = 'No lectures available yet.';
+        message.style.color = '#999';
+        message.style.textAlign = 'center';
+        tileContainer.appendChild(message);
         return;
       }
 
-      // Create one <li> + <a> per folder
+      // Create one tile per folder
       folders.forEach(folderName => {
-        const li = document.createElement('li');
         const link = document.createElement('a');
-        // Assume each folder has an index.html (e.g., "Lecture1/index.html")
         link.href = `${folderName}/index.html`;
-        link.textContent = folderName;
-        link.target = '_self';
-        li.appendChild(link);
-        folderListElement.appendChild(li);
+        link.className = 'tile';
+        link.innerHTML = `
+          <h3>${folderName}</h3>
+          <p>Click to open</p>
+        `;
+        tileContainer.appendChild(link);
       });
     }
 
-    // Build the list on page load
-    document.addEventListener('DOMContentLoaded', buildFolderList);
+    // Build the tiles on page load
+    document.addEventListener('DOMContentLoaded', buildTiles);
   </script>
 </body>
 </html>
