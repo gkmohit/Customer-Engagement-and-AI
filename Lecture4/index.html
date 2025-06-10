@@ -81,8 +81,60 @@
             outline: none;
             transition: border 0.2s;
         }
-        input:focus, select:focus {
-            border: 2px solid var(--accent2);
+        input::placeholder, textarea::placeholder {
+            color: #7da0b6;
+            opacity: 1;
+            transition: color 0.2s;
+        }
+        body.dark-mode input::placeholder, body.dark-mode textarea::placeholder {
+            color: #b8d8e6;
+            opacity: 1;
+        }
+        input[type="date"]::-webkit-input-placeholder,
+        input[type="date"]::placeholder {
+            color: #7da0b6;
+            opacity: 1;
+        }
+        body.dark-mode input[type="date"]::-webkit-input-placeholder,
+        body.dark-mode input[type="date"]::placeholder {
+            color: #b8d8e6;
+            opacity: 1;
+        }
+        /* For Firefox */
+        input[type="date"]::-moz-placeholder {
+            color: #7da0b6;
+            opacity: 1;
+        }
+        body.dark-mode input[type="date"]::-moz-placeholder {
+            color: #b8d8e6;
+            opacity: 1;
+        }
+        /* For Edge */
+        input[type="date"]:-ms-input-placeholder {
+            color: #7da0b6;
+            opacity: 1;
+        }
+        body.dark-mode input[type="date"]:-ms-input-placeholder {
+            color: #b8d8e6;
+            opacity: 1;
+        }
+        /* For standard */
+        input[type="date"]::placeholder {
+            color: #7da0b6;
+            opacity: 1;
+        }
+        body.dark-mode input[type="date"]::placeholder {
+            color: #b8d8e6;
+            opacity: 1;
+        }
+        /* Icon accessibility for dark mode */
+        .logo, .header-logo {
+            filter: none;
+            /* Default: no filter for light mode */
+        }
+        body.dark-mode .logo, body.dark-mode .header-logo {
+            filter: brightness(1.2) drop-shadow(0 0 2px #232a36);
+            /* Slightly brighten and add shadow for visibility on dark backgrounds */
         }
         button {
             padding: 12px 22px;
