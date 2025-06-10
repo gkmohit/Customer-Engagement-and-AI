@@ -474,6 +474,18 @@
             <option value="name">Name</option>
         </select>
     </div>
+    <div id="gamification-bar" style="max-width:600px;margin:0 auto 18px auto;padding:12px 18px;background:var(--white);border-radius:14px;box-shadow:0 2px 12px var(--shadow);display:flex;align-items:center;gap:18px;justify-content:center;">
+        <span id="level-label" style="font-weight:700;color:var(--accent2);font-size:1.2rem;">Level 1</span>
+        <div style="flex:1;height:18px;background:#eee;border-radius:9px;overflow:hidden;">
+            <div id="xp-bar" style="height:100%;background:linear-gradient(90deg,var(--accent1),var(--accent2));width:0%;transition:width 0.4s;"></div>
+        </div>
+        <span id="xp-label" style="font-weight:600;color:var(--accent1);font-size:1rem;">0/5 XP</span>
+        <span id="reward-emoji" style="font-size:1.5rem;">🎉</span>
+    </div>
+    <div id="deleted-section" style="max-width:600px;margin:0 auto 18px auto;padding:12px 18px;background:var(--white);border-radius:14px;box-shadow:0 2px 12px var(--shadow);display:none;flex-direction:column;align-items:center;">
+        <h3 style="color:var(--accent2);margin:0 0 8px 0;">Deleted Tasks</h3>
+        <ul id="deleted-list" style="list-style:none;padding:0;margin:0;width:100%;"></ul>
+    </div>
     <div id="scrum-board">
         <div class="column" data-status="Pending">
             <h2>Pending</h2>
@@ -502,9 +514,14 @@
         const completedList = document.getElementById('completed-list');
 
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let deletedTasks = JSON.parse(localStorage.getItem('deletedTasks')) || [];
 
         function saveTasks() {
             localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function saveDeletedTasks() {
+            localStorage.setItem('deletedTasks', JSON.stringify(deletedTasks));
         }
 
         function renderTasks() {
@@ -542,6 +559,28 @@
             });
         }
 
+        function renderDeletedTasks() {
+            const deletedSection = document.getElementById('deleted-section');
+            const deletedList = document.getElementById('deleted-list');
+            deletedList.innerHTML = '';
+            if (deletedTasks.length === 0) {
+                deletedSection.style.display = 'none';
+                return;
+            }
+            deletedSection.style.display = 'flex';
+            deletedTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.style.background = 'var(--accent3)';
+                li.style.color = 'var(--text-main)';
+                li.style.margin = '6px 0';
+                li.style.padding = '8px 12px';
+                li.style.borderRadius = '8px';
+                li.style.fontSize = '1rem';
+                li.innerHTML = `<strong>${task.name}</strong> <span style='font-size:0.95em;'>(${task.type}, Due: ${task.dueDate}, Priority: ${task.priority})</span>`;
+                deletedList.appendChild(li);
+            });
+        }
+
         function addTask() {
             if (!taskNameInput.value || !dueDateInput.value || !taskTypeInput.value) return;
             const task = {
@@ -562,6 +601,13 @@
         }
 
         function deleteTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                deletedTasks.unshift(task); // Add to start
+                if (deletedTasks.length > 20) deletedTasks.pop(); // Keep only last 20
+                saveDeletedTasks();
+                renderDeletedTasks();
+            }
             tasks = tasks.filter(task => task.id !== id);
             saveTasks();
             renderTasks();
@@ -572,15 +618,18 @@
             if (idx === -1) return;
             const statusOrder = ['Pending', 'In Progress', 'Completed'];
             let current = statusOrder.indexOf(tasks[idx].status);
-            if (direction === 'forward' && current < 2) current++;
+            if (direction === 'forward' && current < 2) {
+                current++;
+                // If moving to Completed, gain XP
+                if (statusOrder[current] === 'Completed') {
+                    gainXP();
+                }
+            }
             if (direction === 'back' && current > 0) current--;
             tasks[idx].status = statusOrder[current];
             saveTasks();
             renderTasks();
         };
-
-        addTaskButton.addEventListener('click', addTask);
-        sortOrderInput.addEventListener('change', renderTasks);
 
         // Dark mode toggle logic
         const darkModeToggle = document.getElementById('dark-mode-toggle');
@@ -603,7 +652,49 @@
             }
         });
 
+        // Gamification variables
+        let level = parseInt(localStorage.getItem('level') || '1');
+        let xp = parseInt(localStorage.getItem('xp') || '0');
+        const xpPerLevel = 5;
+        const rewardEmojis = ['🎉','🏆','🚀','🌟','💎','🔥','🥇','🦄','🍕','🎮'];
+        function updateGamificationBar() {
+            document.getElementById('level-label').textContent = `Level ${level}`;
+            document.getElementById('xp-label').textContent = `${xp}/${xpPerLevel} XP`;
+            document.getElementById('xp-bar').style.width = `${(xp/xpPerLevel)*100}%`;
+            document.getElementById('reward-emoji').textContent = rewardEmojis[(level-1)%rewardEmojis.length];
+        }
+        function gainXP(amount=1) {
+            xp += amount;
+            if (xp >= xpPerLevel) {
+                xp = xp - xpPerLevel;
+                level++;
+                // Optionally show a toast or animation for level up
+                setTimeout(()=>{
+                    alert(`Level Up! You reached Level ${level} and earned a new reward! ${rewardEmojis[(level-1)%rewardEmojis.length]}`);
+                }, 100);
+            }
+            localStorage.setItem('level', level);
+            localStorage.setItem('xp', xp);
+            updateGamificationBar();
+        }
+        // Patch deleteTask to gain XP on completed task
+        const originalDeleteTask = deleteTask;
+        deleteTask = function(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task && task.status === 'Completed') {
+                gainXP();
+            }
+            originalDeleteTask(id);
+        }
+        // On load
+        updateGamificationBar();
+        renderDeletedTasks();
         renderTasks();
+
+        addTaskButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            addTask();
+        });
     </script>
 </body>
 </html>
