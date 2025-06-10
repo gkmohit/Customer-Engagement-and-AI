@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - Scrum Board</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #36405b;
+        }
+        h1 {
+            text-align: center;
+            color: #fcfbf7;
+        }
+        #task-form {
+            margin-bottom: 20px;
+            background: #36405b;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        input, select {
+            padding: 10px;
+            margin: 5px 0;
+            width: auto;
+            border-radius: 5px;
+            border: 1px solid #91c2c9;
+            background: #fcfbf7;
+            color: #36405b;
+        }
+        button {
+            padding: 10px 16px;
+            background-color: #f2a28b;
+            color: #36405b;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #91c2c9;
+            color: #36405b;
+        }
+        .filter {
+            margin-bottom: 20px;
+            color: #fcfbf7;
+            text-align: center;
+        }
+        #scrum-board {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        .column {
+            background: #fcfbf7;
+            border-radius: 8px;
+            padding: 10px;
+            width: 300px;
+            min-height: 400px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .column[data-status="Pending"] {
+            border-top: 8px solid #91c2c9;
+        }
+        .column[data-status="In Progress"] {
+            border-top: 8px solid #f2a28b;
+        }
+        .column[data-status="Completed"] {
+            border-top: 8px solid #fedeab;
+        }
+        .column h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #36405b;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+            min-height: 300px;
+            flex: 1;
+        }
+        .task-item {
+            background: #91c2c9;
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            color: #36405b;
+            border-left: 6px solid #f2a28b;
+        }
+        .column[data-status="In Progress"] .task-item {
+            background: #f2a28b;
+            color: #36405b;
+            border-left: 6px solid #91c2c9;
+        }
+        .column[data-status="Completed"] .task-item {
+            background: #fedeab;
+            color: #36405b;
+            border-left: 6px solid #91c2c9;
+        }
+        .task-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: flex-end;
+        }
+        .task-actions button {
+            padding: 4px 8px;
+            font-size: 0.9em;
+            border-radius: 3px;
+        }
+        .task-actions .move {
+            background: #36405b;
+            color: #fcfbf7;
+        }
+        .task-actions .delete {
+            background: #dc3545;
+            color: #fff;
+        }
+        .task-actions .move:hover {
+            background: #91c2c9;
+            color: #36405b;
+        }
+        .task-actions .delete:hover {
+            background: #a71d2a;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Task Manager - Scrum Board</h1>
+    <div id="task-form">
+        <input type="text" id="task-name" placeholder="Task Name" required>
+        <input type="date" id="due-date" required>
+        <input type="text" id="task-type" placeholder="Task Type (e.g. Home, School, Project1)" required>
+        <select id="priority">
+            <option value="Urgent">Urgent</option>
+            <option value="High">High</option>
+            <option value="Med">Med</option>
+            <option value="Low">Low</option>
+        </select>
+        <button id="add-task">Add Task</button>
+    </div>
+    <div class="filter">
+        <label for="sort-order">Sort by:</label>
+        <select id="sort-order">
+            <option value="due-date">Due Date</option>
+            <option value="priority">Priority</option>
+            <option value="name">Name</option>
+        </select>
+    </div>
+    <div id="scrum-board">
+        <div class="column" data-status="Pending">
+            <h2>Pending</h2>
+            <ul class="task-list" id="pending-list"></ul>
+        </div>
+        <div class="column" data-status="In Progress">
+            <h2>In Progress</h2>
+            <ul class="task-list" id="inprogress-list"></ul>
+        </div>
+        <div class="column" data-status="Completed">
+            <h2>Completed</h2>
+            <ul class="task-list" id="completed-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const taskNameInput = document.getElementById('task-name');
+        const dueDateInput = document.getElementById('due-date');
+        const taskTypeInput = document.getElementById('task-type');
+        const priorityInput = document.getElementById('priority');
+        const addTaskButton = document.getElementById('add-task');
+        const sortOrderInput = document.getElementById('sort-order');
+
+        const pendingList = document.getElementById('pending-list');
+        const inprogressList = document.getElementById('inprogress-list');
+        const completedList = document.getElementById('completed-list');
+
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function renderTasks() {
+            pendingList.innerHTML = '';
+            inprogressList.innerHTML = '';
+            completedList.innerHTML = '';
+
+            let sortedTasks = [...tasks];
+            if (sortOrderInput.value === 'due-date') {
+                sortedTasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+            } else if (sortOrderInput.value === 'priority') {
+                const order = {Urgent: 1, High: 2, Med: 3, Low: 4};
+                sortedTasks.sort((a, b) => order[a.priority] - order[b.priority]);
+            } else if (sortOrderInput.value === 'name') {
+                sortedTasks.sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            sortedTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'task-item';
+                li.innerHTML = `
+                    <strong>${task.name}</strong>
+                    <span>Due: ${task.dueDate}</span>
+                    <span>Type: ${task.type}</span>
+                    <span>Priority: ${task.priority}</span>
+                    <div class="task-actions">
+                        ${task.status !== 'Pending' ? `<button class="move" onclick="moveTask('${task.id}', 'back')">&lt;</button>` : ''}
+                        ${task.status !== 'Completed' ? `<button class="move" onclick="moveTask('${task.id}', 'forward')">&gt;</button>` : ''}
+                        <button class="delete" onclick="deleteTask('${task.id}')">Delete</button>
+                    </div>
+                `;
+                if (task.status === 'Pending') pendingList.appendChild(li);
+                else if (task.status === 'In Progress') inprogressList.appendChild(li);
+                else if (task.status === 'Completed') completedList.appendChild(li);
+            });
+        }
+
+        function addTask() {
+            if (!taskNameInput.value || !dueDateInput.value || !taskTypeInput.value) return;
+            const task = {
+                id: Date.now().toString(),
+                name: taskNameInput.value,
+                dueDate: dueDateInput.value,
+                type: taskTypeInput.value,
+                priority: priorityInput.value,
+                status: 'Pending'
+            };
+            tasks.push(task);
+            saveTasks();
+            renderTasks();
+            taskNameInput.value = '';
+            dueDateInput.value = '';
+            taskTypeInput.value = '';
+            priorityInput.value = 'Urgent';
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(task => task.id !== id);
+            saveTasks();
+            renderTasks();
+        }
+
+        window.moveTask = function(id, direction) {
+            const idx = tasks.findIndex(t => t.id === id);
+            if (idx === -1) return;
+            const statusOrder = ['Pending', 'In Progress', 'Completed'];
+            let current = statusOrder.indexOf(tasks[idx].status);
+            if (direction === 'forward' && current < 2) current++;
+            if (direction === 'back' && current > 0) current--;
+            tasks[idx].status = statusOrder[current];
+            saveTasks();
+            renderTasks();
+        };
+
+        addTaskButton.addEventListener('click', addTask);
+        sortOrderInput.addEventListener('change', renderTasks);
+
+        renderTasks();
+    </script>
+</body>
+</html>
