@@ -2598,11 +2598,13 @@
 
         function getLast6Months() {
             const months = [];
+            const currentDate = new Date();
+            
             for (let i = 5; i >= 0; i--) {
-                const date = new Date();
-                date.setMonth(date.getMonth() - i);
-                months.push(date.toLocaleDateString('en-US', { month: 'short' }));
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                months.push(date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
             }
+            
             return months;
         }
 
@@ -2614,11 +2616,20 @@
                 return monthlyData;
             }
             
-            // For demo purposes, distribute expenses across months
-            // In a real app, you'd group by actual transaction dates
-            expenses.forEach((expense, index) => {
-                const monthIndex = index % 6;
-                monthlyData[monthIndex] += expense.amount;
+            // Group expenses by actual month
+            expenses.forEach(expense => {
+                const transactionDate = new Date(expense.date);
+                const currentDate = new Date();
+                
+                // Calculate months difference
+                const monthsDiff = (currentDate.getFullYear() - transactionDate.getFullYear()) * 12 + 
+                                 (currentDate.getMonth() - transactionDate.getMonth());
+                
+                // Only include transactions from the last 6 months (0-5 months ago)
+                if (monthsDiff >= 0 && monthsDiff < 6) {
+                    const monthIndex = 5 - monthsDiff; // Reverse index (most recent = index 5)
+                    monthlyData[monthIndex] += expense.amount;
+                }
             });
             
             return monthlyData;
