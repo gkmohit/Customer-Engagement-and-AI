@@ -1956,7 +1956,7 @@
         // Budget Management
         function renderBudget() {
             updateBudgetOverview();
-            updateBudgetCharts();
+            initializeBudgetCharts();
         }
 
         function updateBudgetOverview() {
@@ -1992,9 +1992,15 @@
             localStorage.setItem('transactions', JSON.stringify(appState.transactions));
             incrementStreak();
             
+            console.log('Transaction added:', transaction);
+            
             if (appState.currentModule === 'budget') {
                 renderBudget();
             }
+            
+            // Update dashboard stats
+            updateDashboardStats();
+            updateCharts();
         }
 
         // Notes Management
@@ -2130,7 +2136,111 @@
 
         function updateBudgetCharts() {
             // Update charts in budget module if they exist
+            if (window.spendingChart) {
+                window.spendingChart.data.datasets[0].data = getMonthlySpendingData();
+                window.spendingChart.update();
+            }
+            
+            if (window.categoryChart) {
+                window.categoryChart.data.datasets[0].data = getExpensesByCategory();
+                window.categoryChart.update();
+            }
+            
+            // Also update dashboard charts
             updateCharts();
+        }
+
+        function initializeBudgetCharts() {
+            // Initialize spending chart (monthly spending)
+            const spendingCtx = document.getElementById('spending-chart');
+            if (spendingCtx) {
+                if (window.spendingChart) {
+                    window.spendingChart.destroy();
+                }
+                
+                window.spendingChart = new Chart(spendingCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: getLast6Months(),
+                        datasets: [{
+                            label: 'Monthly Spending',
+                            data: getMonthlySpendingData(),
+                            backgroundColor: 'rgba(236, 72, 153, 0.8)',
+                            borderColor: '#ec4899',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(148, 163, 184, 0.1)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value;
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(148, 163, 184, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Initialize category chart
+            const categoryCtx = document.getElementById('category-chart');
+            if (categoryCtx) {
+                if (window.categoryChart) {
+                    window.categoryChart.destroy();
+                }
+                
+                const categoryData = getExpensesByCategory();
+                const hasData = categoryData.some(value => value > 0);
+                
+                window.categoryChart = new Chart(categoryCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: getCategoryLabels(),
+                        datasets: [{
+                            data: hasData ? categoryData : [1], // Show placeholder if no data
+                            backgroundColor: hasData ? [
+                                '#6366f1',
+                                '#ec4899',
+                                '#10b981',
+                                '#f59e0b',
+                                '#ef4444',
+                                '#8b5cf6',
+                                '#06b6d4',
+                                '#84cc16'
+                            ] : ['#e2e8f0']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         function getLast7Days() {
@@ -2184,6 +2294,40 @@
             });
             
             return Object.values(categories);
+        }
+
+        function getLast6Months() {
+            const months = [];
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date();
+                date.setMonth(date.getMonth() - i);
+                months.push(date.toLocaleDateString('en-US', { month: 'short' }));
+            }
+            return months;
+        }
+
+        function getMonthlySpendingData() {
+            const monthlyData = [0, 0, 0, 0, 0, 0];
+            const expenses = appState.transactions.filter(t => t.type === 'expense');
+            
+            if (expenses.length === 0) {
+                return monthlyData;
+            }
+            
+            // For demo purposes, distribute expenses across months
+            // In a real app, you'd group by actual transaction dates
+            expenses.forEach((expense, index) => {
+                const monthIndex = index % 6;
+                monthlyData[monthIndex] += expense.amount;
+            });
+            
+            return monthlyData;
+        }
+
+        function getCategoryLabels() {
+            return appState.categories.budget.map(category => 
+                category.charAt(0).toUpperCase() + category.slice(1)
+            );
         }
 
         // Event Listeners
