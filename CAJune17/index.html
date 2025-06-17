@@ -609,6 +609,175 @@
             font-size: 0.7rem;
         }
 
+        /* Recommendations Section */
+        .recommendations-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .recommendation-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .recommendation-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+        }
+
+        .recommendation-card.budget::before {
+            background: var(--gradient-secondary);
+        }
+
+        .recommendation-card.notes::before {
+            background: var(--gradient-accent);
+        }
+
+        .recommendation-type {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .recommendation-card.budget .recommendation-type {
+            color: var(--secondary);
+        }
+
+        .recommendation-card.notes .recommendation-type {
+            color: var(--accent);
+        }
+
+        .recommendation-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .recommendation-content {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .recommendation-action {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .recommendation-action:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Category Management */
+        .category-management {
+            margin-bottom: 3rem;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .category-tab {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+
+        .category-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .category-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .category-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .category-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .category-remove {
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .add-category {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .add-category .form-input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
         /* Forms */
         .form-group {
             margin-bottom: 1rem;
@@ -869,6 +1038,42 @@
                     </div>
                 </div>
 
+                <!-- Smart Recommendations -->
+                <div class="recommendations-section fade-in-up">
+                    <h2 class="section-title">
+                        <i class="fas fa-brain"></i>
+                        Smart Recommendations
+                    </h2>
+                    <div class="recommendations-grid" id="recommendations-grid">
+                        <!-- Recommendations will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Category Management -->
+                <div class="category-management fade-in-up">
+                    <h2 class="section-title">
+                        <i class="fas fa-tags"></i>
+                        Category Management
+                    </h2>
+                    <div class="category-tabs">
+                        <button class="category-tab active" data-category="tasks">Tasks</button>
+                        <button class="category-tab" data-category="budget">Budget</button>
+                        <button class="category-tab" data-category="notes">Notes</button>
+                    </div>
+                    <div class="category-content">
+                        <div class="category-list" id="category-list">
+                            <!-- Categories will be rendered here -->
+                        </div>
+                        <div class="add-category">
+                            <input type="text" id="new-category-input" placeholder="Add new category..." class="form-input">
+                            <button id="add-category-btn" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                Add Category
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Charts -->
                 <div class="charts-grid fade-in-up">
                     <div class="chart-card">
@@ -1049,12 +1254,7 @@
                 <div class="form-group">
                     <label class="form-label">Category</label>
                     <select class="form-select" id="task-category">
-                        <option value="personal">Personal</option>
-                        <option value="work">Work</option>
-                        <option value="school">School</option>
-                        <option value="business">Business</option>
-                        <option value="family">Family</option>
-                        <option value="baby">Baby</option>
+                        <!-- Categories will be populated dynamically -->
                     </select>
                 </div>
                 <div class="form-group">
@@ -1093,14 +1293,7 @@
                 <div class="form-group">
                     <label class="form-label">Category</label>
                     <select class="form-select" id="transaction-category">
-                        <option value="food">Food & Dining</option>
-                        <option value="transport">Transportation</option>
-                        <option value="shopping">Shopping</option>
-                        <option value="entertainment">Entertainment</option>
-                        <option value="bills">Bills & Utilities</option>
-                        <option value="healthcare">Healthcare</option>
-                        <option value="education">Education</option>
-                        <option value="other">Other</option>
+                        <!-- Categories will be populated dynamically -->
                     </select>
                 </div>
                 <div class="form-group">
@@ -1145,6 +1338,11 @@
             tasks: JSON.parse(localStorage.getItem('tasks')) || [],
             transactions: JSON.parse(localStorage.getItem('transactions')) || [],
             notes: JSON.parse(localStorage.getItem('notes')) || [],
+            categories: JSON.parse(localStorage.getItem('categories')) || {
+                tasks: ['personal', 'work', 'school', 'business', 'family', 'baby'],
+                budget: ['food', 'transport', 'shopping', 'entertainment', 'bills', 'healthcare', 'education', 'other'],
+                notes: ['work', 'personal', 'ideas', 'meeting', 'important', 'project']
+            },
             streak: parseInt(localStorage.getItem('streak')) || 0,
             lastActivity: localStorage.getItem('lastActivity') || null
         };
@@ -1159,6 +1357,7 @@
             // clearSampleData();
             setTheme(appState.theme);
             updateStreak();
+            updateFormCategories(); // Initialize form categories
             renderDashboard();
             bindEventListeners();
             initializeCharts();
@@ -1242,6 +1441,8 @@
         // Dashboard Rendering
         function renderDashboard() {
             updateDashboardStats();
+            renderRecommendations();
+            renderCategoryManagement();
             updateCharts();
         }
 
@@ -1257,6 +1458,303 @@
             document.getElementById('tasks-completed').textContent = completedTasks;
             document.getElementById('budget-remaining').textContent = `$${(totalIncome - totalExpenses).toFixed(2)}`;
             document.getElementById('notes-count').textContent = appState.notes.length;
+        }
+
+        // Smart Recommendations System
+        function renderRecommendations() {
+            const recommendationsContainer = document.getElementById('recommendations-grid');
+            recommendationsContainer.innerHTML = '';
+            
+            const recommendations = generateRecommendations();
+            
+            recommendations.forEach(rec => {
+                const recElement = createRecommendationElement(rec);
+                recommendationsContainer.appendChild(recElement);
+            });
+        }
+
+        function generateRecommendations() {
+            const recommendations = [];
+            
+            // Task Recommendations
+            const taskRecs = generateTaskRecommendations();
+            recommendations.push(...taskRecs);
+            
+            // Budget Recommendations
+            const budgetRecs = generateBudgetRecommendations();
+            recommendations.push(...budgetRecs);
+            
+            // Notes Recommendations
+            const notesRecs = generateNotesRecommendations();
+            recommendations.push(...notesRecs);
+            
+            return recommendations.slice(0, 6); // Limit to 6 recommendations
+        }
+
+        function generateTaskRecommendations() {
+            const recommendations = [];
+            const overdueTasks = appState.tasks.filter(task => {
+                if (!task.dueDate) return false;
+                const dueDate = new Date(task.dueDate);
+                const today = new Date();
+                return dueDate < today && task.status !== 'done';
+            });
+            
+            const highPriorityTasks = appState.tasks.filter(task => 
+                task.priority === 'high' && task.status === 'todo'
+            );
+            
+            if (overdueTasks.length > 0) {
+                recommendations.push({
+                    type: 'task',
+                    icon: 'fas fa-exclamation-triangle',
+                    title: 'Overdue Tasks Alert',
+                    content: `You have ${overdueTasks.length} overdue task(s). Consider prioritizing these to stay on track.`,
+                    action: 'View Tasks',
+                    actionFn: () => showModule('tasks')
+                });
+            }
+            
+            if (highPriorityTasks.length > 0) {
+                recommendations.push({
+                    type: 'task',
+                    icon: 'fas fa-star',
+                    title: 'High Priority Focus',
+                    content: `You have ${highPriorityTasks.length} high-priority tasks waiting. Tackle these first for maximum impact.`,
+                    action: 'View Tasks',
+                    actionFn: () => showModule('tasks')
+                });
+            }
+            
+            // Recurring task recommendation
+            const recurringTasks = appState.tasks.filter(task => task.recurring);
+            if (recurringTasks.length === 0) {
+                recommendations.push({
+                    type: 'task',
+                    icon: 'fas fa-sync',
+                    title: 'Set Up Recurring Tasks',
+                    content: 'Consider setting up recurring tasks for routine activities like exercise, meal prep, or weekly reviews.',
+                    action: 'Add Task',
+                    actionFn: () => document.getElementById('task-modal').classList.add('active')
+                });
+            }
+            
+            return recommendations;
+        }
+
+        function generateBudgetRecommendations() {
+            const recommendations = [];
+            const expenses = appState.transactions.filter(t => t.type === 'expense');
+            const income = appState.transactions.filter(t => t.type === 'income');
+            
+            const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
+            const totalIncome = income.reduce((sum, t) => sum + t.amount, 0);
+            
+            // Spending analysis
+            if (totalExpenses > totalIncome * 0.8) {
+                recommendations.push({
+                    type: 'budget',
+                    icon: 'fas fa-chart-line',
+                    title: 'High Spending Alert',
+                    content: 'Your expenses are over 80% of your income. Consider reviewing your spending in high-cost categories.',
+                    action: 'View Budget',
+                    actionFn: () => showModule('budget')
+                });
+            }
+            
+            // Category analysis
+            const categorySpending = {};
+            expenses.forEach(expense => {
+                categorySpending[expense.category] = (categorySpending[expense.category] || 0) + expense.amount;
+            });
+            
+            const topCategory = Object.keys(categorySpending).reduce((a, b) => 
+                categorySpending[a] > categorySpending[b] ? a : b, Object.keys(categorySpending)[0]
+            );
+            
+            if (topCategory && categorySpending[topCategory] > totalExpenses * 0.3) {
+                recommendations.push({
+                    type: 'budget',
+                    icon: 'fas fa-pie-chart',
+                    title: `${topCategory.charAt(0).toUpperCase() + topCategory.slice(1)} Spending`,
+                    content: `Your ${topCategory} expenses are ${Math.round(categorySpending[topCategory]/totalExpenses*100)}% of total spending. Consider setting a budget limit.`,
+                    action: 'View Budget',
+                    actionFn: () => showModule('budget')
+                });
+            }
+            
+            // Savings recommendation
+            if (totalIncome > 0 && (totalIncome - totalExpenses) < totalIncome * 0.2) {
+                recommendations.push({
+                    type: 'budget',
+                    icon: 'fas fa-piggy-bank',
+                    title: 'Boost Your Savings',
+                    content: 'Try to save at least 20% of your income. Consider the 50/30/20 rule: needs, wants, savings.',
+                    action: 'View Budget',
+                    actionFn: () => showModule('budget')
+                });
+            }
+            
+            return recommendations;
+        }
+
+        function generateNotesRecommendations() {
+            const recommendations = [];
+            
+            // Related notes based on recent tasks
+            const recentTasks = appState.tasks.slice(-3);
+            const taskCategories = [...new Set(recentTasks.map(task => task.category))];
+            
+            const relatedNotes = appState.notes.filter(note => 
+                note.tags && note.tags.some(tag => taskCategories.includes(tag))
+            );
+            
+            if (relatedNotes.length > 0) {
+                recommendations.push({
+                    type: 'notes',
+                    icon: 'fas fa-link',
+                    title: 'Related Notes Found',
+                    content: `Found ${relatedNotes.length} notes related to your recent tasks. Review them for context and insights.`,
+                    action: 'View Notes',
+                    actionFn: () => showModule('notes')
+                });
+            }
+            
+            // Note organization
+            const untaggedNotes = appState.notes.filter(note => !note.tags || note.tags.length === 0);
+            if (untaggedNotes.length > 0) {
+                recommendations.push({
+                    type: 'notes',
+                    icon: 'fas fa-tags',
+                    title: 'Organize Your Notes',
+                    content: `You have ${untaggedNotes.length} untagged notes. Adding tags will help you find them later.`,
+                    action: 'View Notes',
+                    actionFn: () => showModule('notes')
+                });
+            }
+            
+            // Knowledge capture
+            const completedTasks = appState.tasks.filter(task => task.status === 'done');
+            const tasksWithoutNotes = completedTasks.filter(task => {
+                return !appState.notes.some(note => 
+                    note.tags && note.tags.includes(task.category)
+                );
+            });
+            
+            if (tasksWithoutNotes.length > 2) {
+                recommendations.push({
+                    type: 'notes',
+                    icon: 'fas fa-lightbulb',
+                    title: 'Capture Your Learnings',
+                    content: 'Consider creating notes about your completed tasks to capture insights and lessons learned.',
+                    action: 'Add Note',
+                    actionFn: () => document.getElementById('note-modal').classList.add('active')
+                });
+            }
+            
+            return recommendations;
+        }
+
+        function createRecommendationElement(rec) {
+            const div = document.createElement('div');
+            div.className = `recommendation-card ${rec.type}`;
+            
+            div.innerHTML = `
+                <div class="recommendation-type">
+                    <i class="${rec.icon}"></i>
+                    ${rec.type.charAt(0).toUpperCase() + rec.type.slice(1)} Recommendation
+                </div>
+                <div class="recommendation-title">${rec.title}</div>
+                <div class="recommendation-content">${rec.content}</div>
+                <button class="recommendation-action" onclick="(${rec.actionFn.toString()})()">${rec.action}</button>
+            `;
+            
+            return div;
+        }
+
+        // Category Management System
+        let currentCategoryType = 'tasks';
+
+        function renderCategoryManagement() {
+            renderCategoryList();
+        }
+
+        function renderCategoryList() {
+            const categoryList = document.getElementById('category-list');
+            const categories = appState.categories[currentCategoryType];
+            
+            categoryList.innerHTML = '';
+            
+            categories.forEach(category => {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'category-item';
+                categoryElement.innerHTML = `
+                    <span>${category}</span>
+                    <button class="category-remove" onclick="removeCategory('${category}')">×</button>
+                `;
+                categoryList.appendChild(categoryElement);
+            });
+        }
+
+        function addCategory() {
+            const input = document.getElementById('new-category-input');
+            const newCategory = input.value.trim().toLowerCase();
+            
+            if (newCategory && !appState.categories[currentCategoryType].includes(newCategory)) {
+                appState.categories[currentCategoryType].push(newCategory);
+                localStorage.setItem('categories', JSON.stringify(appState.categories));
+                renderCategoryList();
+                updateFormCategories();
+                input.value = '';
+            }
+        }
+
+        function removeCategory(category) {
+            const index = appState.categories[currentCategoryType].indexOf(category);
+            if (index > -1) {
+                appState.categories[currentCategoryType].splice(index, 1);
+                localStorage.setItem('categories', JSON.stringify(appState.categories));
+                renderCategoryList();
+                updateFormCategories();
+            }
+        }
+
+        function switchCategoryType(type) {
+            currentCategoryType = type;
+            
+            // Update tab active state
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-category="${type}"]`).classList.add('active');
+            
+            renderCategoryList();
+        }
+
+        function updateFormCategories() {
+            // Update task categories
+            const taskCategorySelect = document.getElementById('task-category');
+            if (taskCategorySelect) {
+                taskCategorySelect.innerHTML = '';
+                appState.categories.tasks.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+                    taskCategorySelect.appendChild(option);
+                });
+            }
+            
+            // Update transaction categories
+            const transactionCategorySelect = document.getElementById('transaction-category');
+            if (transactionCategorySelect) {
+                transactionCategorySelect.innerHTML = '';
+                appState.categories.budget.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+                    transactionCategorySelect.appendChild(option);
+                });
+            }
         }
 
         // Task Management
@@ -1710,15 +2208,32 @@
             
             // Modal controls
             document.getElementById('add-task-btn').addEventListener('click', function() {
+                updateFormCategories();
                 document.getElementById('task-modal').classList.add('active');
             });
             
             document.getElementById('add-transaction-btn').addEventListener('click', function() {
+                updateFormCategories();
                 document.getElementById('transaction-modal').classList.add('active');
             });
             
             document.getElementById('add-note-btn').addEventListener('click', function() {
                 document.getElementById('note-modal').classList.add('active');
+            });
+            
+            // Category management
+            document.getElementById('add-category-btn').addEventListener('click', addCategory);
+            
+            document.getElementById('new-category-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addCategory();
+                }
+            });
+            
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchCategoryType(this.dataset.category);
+                });
             });
             
             document.querySelectorAll('.modal-close').forEach(btn => {
