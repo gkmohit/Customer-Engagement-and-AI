@@ -1,0 +1,33 @@
+Hey,
+How are you doing?
+I want you to build a single html file with local storage.
+Here is the flow:
+Dashboard -> Task manager
+Dashboard -> Budget Tracking
+Dashbaord -> Note taking
+
+I want to add the option to switch between dark theme and light theme,
+plus add some gamifications. I want to build graphs based on the data a user adds.
+
+The graphs, themes, and gamification aspects should show up on the dashboard.
+Please use the colours from the png uploaded.
+
+Make the app tile based and focused for Gen-z users.
+
+The task mamanger should be a scrum board that can track projects, deadlines, categories.
+I want you to track completed tasks and show it on the dashboard graph. I should be able to
+add recurring tasks, task templates (school, business, work, personal, family, baby) plus I
+want you to recommend task priorities based on due dates and past completion patterns.
+
+Budget Tracker should include income, expenses, savings goals, and visualizations of spending habits.
+It should allow users to set budgets for different categories and track their progress. Create a spending
+recommendation feature that suggests budget adjustments based on spending patterns.
+
+Note taking should allow users to create, edit, and delete notes.
+It should support rich text formatting and tagging for easy organization.
+The dashboard should display a summary of tasks, budget status, and recent notes.
+
+Make sure the app uses theme from www.text.ai and the tiles should open task manager, budget, and notes modules. 
+The whole app should be responsive and work well on mobile devices. and I should be able to link each item from the above three
+to each other, i.e link task manager with notes, budget tracker with tasks, etc.
+Please use modern HTML, CSS, and JavaScript practices.

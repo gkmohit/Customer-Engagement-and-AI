@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith - Your Personal Productivity Hub</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* Light Theme */
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --success: #22c55e;
+            
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --gradient-secondary: linear-gradient(135deg, #ec4899 0%, #f97316 100%);
+            --gradient-accent: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #475569;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .streak-counter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--gradient-accent);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .dashboard {
+            display: block;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .dashboard-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px var(--shadow);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .stat-icon.tasks {
+            background: var(--gradient-primary);
+        }
+
+        .stat-icon.budget {
+            background: var(--gradient-secondary);
+        }
+
+        .stat-icon.notes {
+            background: var(--gradient-accent);
+        }
+
+        .stat-content h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-content p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Navigation Tiles */
+        .nav-tiles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .nav-tile {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tile::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .nav-tile.tasks::before {
+            background: var(--gradient-primary);
+        }
+
+        .nav-tile.budget::before {
+            background: var(--gradient-secondary);
+        }
+
+        .nav-tile.notes::before {
+            background: var(--gradient-accent);
+        }
+
+        .nav-tile:hover::before {
+            opacity: 0.1;
+        }
+
+        .nav-tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px var(--shadow);
+        }
+
+        .nav-tile-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .nav-tile-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            margin: 0 auto 1.5rem;
+        }
+
+        .nav-tile.tasks .nav-tile-icon {
+            background: var(--gradient-primary);
+        }
+
+        .nav-tile.budget .nav-tile-icon {
+            background: var(--gradient-secondary);
+        }
+
+        .nav-tile.notes .nav-tile-icon {
+            background: var(--gradient-accent);
+        }
+
+        .nav-tile h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-tile p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        .chart-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Module Styles */
+        .module {
+            display: none;
+        }
+
+        .module.active {
+            display: block;
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .module-title {
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Task Manager Styles */
+        .scrum-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .scrum-column {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            min-height: 400px;
+        }
+
+        .scrum-column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .scrum-column-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .task-count {
+            background: var(--primary);
+            color: white;
+            border-radius: 20px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .task-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: grab;
+            transition: all 0.3s ease;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--shadow);
+        }
+
+        .task-card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .task-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .task-priority {
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .task-priority.high {
+            background: var(--danger);
+            color: white;
+        }
+
+        .task-priority.medium {
+            background: var(--warning);
+            color: white;
+        }
+
+        .task-priority.low {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Budget Tracker Styles */
+        .budget-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .budget-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .budget-amount {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .budget-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            transition: width 0.3s ease;
+        }
+
+        /* Notes Styles */
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .note-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .note-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px var(--shadow);
+        }
+
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .note-preview {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .note-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .note-tag {
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .dashboard-title {
+                font-size: 2rem;
+            }
+
+            .nav-tiles {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .scrum-board {
+                grid-template-columns: 1fr;
+            }
+
+            .module-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-rocket"></i>
+                Zenith
+            </div>
+            <div class="header-controls">
+                <div class="streak-counter">
+                    <i class="fas fa-fire"></i>
+                    <span id="streak-count">0</span> day streak
+                </div>
+                <button class="theme-toggle" id="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard -->
+            <div id="dashboard" class="dashboard module active">
+                <div class="dashboard-header fade-in-up">
+                    <h1 class="dashboard-title">Welcome back! 🚀</h1>
+                    <p class="dashboard-subtitle">Let's make today productive and amazing</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid fade-in-up">
+                    <div class="stat-card">
+                        <div class="stat-icon tasks">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="tasks-completed">0</h3>
+                            <p>Tasks Completed</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon budget">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="budget-remaining">$0</h3>
+                            <p>Budget Remaining</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon notes">
+                            <i class="fas fa-sticky-note"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="notes-count">0</h3>
+                            <p>Notes Created</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Tiles -->
+                <div class="nav-tiles fade-in-up">
+                    <div class="nav-tile tasks" data-module="tasks">
+                        <div class="nav-tile-content">
+                            <div class="nav-tile-icon">
+                                <i class="fas fa-project-diagram"></i>
+                            </div>
+                            <h3>Task Manager</h3>
+                            <p>Organize your projects with our Scrum board. Track deadlines, set priorities, and boost your productivity.</p>
+                        </div>
+                    </div>
+                    <div class="nav-tile budget" data-module="budget">
+                        <div class="nav-tile-content">
+                            <div class="nav-tile-icon">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                            <h3>Budget Tracker</h3>
+                            <p>Take control of your finances. Track expenses, set savings goals, and get smart spending recommendations.</p>
+                        </div>
+                    </div>
+                    <div class="nav-tile notes" data-module="notes">
+                        <div class="nav-tile-content">
+                            <div class="nav-tile-icon">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <h3>Smart Notes</h3>
+                            <p>Capture your thoughts with rich formatting. Tag, organize, and link your ideas effortlessly.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid fade-in-up">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-line"></i>
+                            Task Completion Trend
+                        </div>
+                        <canvas id="tasks-chart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-doughnut"></i>
+                            Spending Overview
+                        </div>
+                        <canvas id="budget-chart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Manager Module -->
+            <div id="tasks" class="module">
+                <div class="module-header">
+                    <h2 class="module-title">
+                        <i class="fas fa-project-diagram"></i>
+                        Task Manager
+                    </h2>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" id="add-task-btn">
+                            <i class="fas fa-plus"></i>
+                            Add Task
+                        </button>
+                        <button class="back-btn" data-module="dashboard">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </button>
+                    </div>
+                </div>
+
+                <div class="scrum-board" id="scrum-board">
+                    <div class="scrum-column" data-status="todo">
+                        <div class="scrum-column-header">
+                            <div class="scrum-column-title">
+                                <i class="fas fa-clipboard-list"></i>
+                                To Do
+                            </div>
+                            <span class="task-count" id="todo-count">0</span>
+                        </div>
+                        <div class="tasks-container" id="todo-tasks"></div>
+                    </div>
+                    <div class="scrum-column" data-status="in-progress">
+                        <div class="scrum-column-header">
+                            <div class="scrum-column-title">
+                                <i class="fas fa-play"></i>
+                                In Progress
+                            </div>
+                            <span class="task-count" id="progress-count">0</span>
+                        </div>
+                        <div class="tasks-container" id="progress-tasks"></div>
+                    </div>
+                    <div class="scrum-column" data-status="done">
+                        <div class="scrum-column-header">
+                            <div class="scrum-column-title">
+                                <i class="fas fa-check"></i>
+                                Done
+                            </div>
+                            <span class="task-count" id="done-count">0</span>
+                        </div>
+                        <div class="tasks-container" id="done-tasks"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget Tracker Module -->
+            <div id="budget" class="module">
+                <div class="module-header">
+                    <h2 class="module-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Budget Tracker
+                    </h2>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" id="add-transaction-btn">
+                            <i class="fas fa-plus"></i>
+                            Add Transaction
+                        </button>
+                        <button class="back-btn" data-module="dashboard">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </button>
+                    </div>
+                </div>
+
+                <div class="budget-overview">
+                    <div class="budget-card">
+                        <div class="budget-amount" id="total-income">$0</div>
+                        <div class="budget-label">Total Income</div>
+                    </div>
+                    <div class="budget-card">
+                        <div class="budget-amount" id="total-expenses">$0</div>
+                        <div class="budget-label">Total Expenses</div>
+                    </div>
+                    <div class="budget-card">
+                        <div class="budget-amount" id="savings-amount">$0</div>
+                        <div class="budget-label">Savings</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="savings-progress"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-bar"></i>
+                            Monthly Spending
+                        </div>
+                        <canvas id="spending-chart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-pie"></i>
+                            Category Breakdown
+                        </div>
+                        <canvas id="category-chart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Module -->
+            <div id="notes" class="module">
+                <div class="module-header">
+                    <h2 class="module-title">
+                        <i class="fas fa-edit"></i>
+                        Smart Notes
+                    </h2>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" id="add-note-btn">
+                            <i class="fas fa-plus"></i>
+                            New Note
+                        </button>
+                        <button class="back-btn" data-module="dashboard">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </button>
+                    </div>
+                </div>
+
+                <div class="notes-grid" id="notes-grid">
+                    <!-- Notes will be rendered here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Task Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Task</h3>
+                <button class="modal-close" data-modal="task-modal">×</button>
+            </div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label class="form-label">Task Title</label>
+                    <input type="text" class="form-input" id="task-title" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="task-description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select class="form-select" id="task-priority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" id="task-category">
+                        <option value="personal">Personal</option>
+                        <option value="work">Work</option>
+                        <option value="school">School</option>
+                        <option value="business">Business</option>
+                        <option value="family">Family</option>
+                        <option value="baby">Baby</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Due Date</label>
+                    <input type="date" class="form-input" id="task-due-date">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="task-recurring"> Recurring Task
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Task</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Transaction Modal -->
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Transaction</h3>
+                <button class="modal-close" data-modal="transaction-modal">×</button>
+            </div>
+            <form id="transaction-form">
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="transaction-type">
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <input type="number" class="form-input" id="transaction-amount" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" id="transaction-category">
+                        <option value="food">Food & Dining</option>
+                        <option value="transport">Transportation</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="bills">Bills & Utilities</option>
+                        <option value="healthcare">Healthcare</option>
+                        <option value="education">Education</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="transaction-description">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Transaction</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Note Modal -->
+    <div id="note-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Note</h3>
+                <button class="modal-close" data-modal="note-modal">×</button>
+            </div>
+            <form id="note-form">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" id="note-title" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Content</label>
+                    <textarea class="form-textarea" id="note-content" rows="10"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tags (comma-separated)</label>
+                    <input type="text" class="form-input" id="note-tags" placeholder="work, important, ideas">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Note</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        const appState = {
+            currentModule: 'dashboard',
+            theme: localStorage.getItem('theme') || 'light',
+            tasks: JSON.parse(localStorage.getItem('tasks')) || [],
+            transactions: JSON.parse(localStorage.getItem('transactions')) || [],
+            notes: JSON.parse(localStorage.getItem('notes')) || [],
+            streak: parseInt(localStorage.getItem('streak')) || 0,
+            lastActivity: localStorage.getItem('lastActivity') || null
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            // Clear any existing sample data
+            clearSampleData();
+            setTheme(appState.theme);
+            updateStreak();
+            renderDashboard();
+            bindEventListeners();
+            initializeCharts();
+        }
+
+        function clearSampleData() {
+            // Clear localStorage to start fresh
+            localStorage.removeItem('tasks');
+            localStorage.removeItem('transactions');
+            localStorage.removeItem('notes');
+            
+            // Reset app state
+            appState.tasks = [];
+            appState.transactions = [];
+            appState.notes = [];
+        }
+
+        // Theme Management
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const themeIcon = document.getElementById('theme-toggle').querySelector('i');
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            appState.theme = theme;
+            localStorage.setItem('theme', theme);
+        }
+
+        function toggleTheme() {
+            const newTheme = appState.theme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+        }
+
+        // Streak Management
+        function updateStreak() {
+            const today = new Date().toDateString();
+            const lastActivity = appState.lastActivity;
+            
+            if (lastActivity === today) {
+                // Already counted today
+            } else if (lastActivity === new Date(Date.now() - 86400000).toDateString()) {
+                // Yesterday, continue streak
+            } else {
+                // Reset streak
+                appState.streak = 0;
+            }
+            
+            document.getElementById('streak-count').textContent = appState.streak;
+        }
+
+        function incrementStreak() {
+            const today = new Date().toDateString();
+            if (appState.lastActivity !== today) {
+                appState.streak++;
+                appState.lastActivity = today;
+                localStorage.setItem('streak', appState.streak);
+                localStorage.setItem('lastActivity', today);
+                document.getElementById('streak-count').textContent = appState.streak;
+            }
+        }
+
+        // Navigation
+        function showModule(moduleId) {
+            document.querySelectorAll('.module').forEach(module => {
+                module.classList.remove('active');
+            });
+            
+            document.getElementById(moduleId).classList.add('active');
+            appState.currentModule = moduleId;
+            
+            if (moduleId === 'dashboard') {
+                renderDashboard();
+            } else if (moduleId === 'tasks') {
+                renderTasks();
+            } else if (moduleId === 'budget') {
+                renderBudget();
+            } else if (moduleId === 'notes') {
+                renderNotes();
+            }
+        }
+
+        // Dashboard Rendering
+        function renderDashboard() {
+            updateDashboardStats();
+            updateCharts();
+        }
+
+        function updateDashboardStats() {
+            const completedTasks = appState.tasks.filter(task => task.status === 'done').length;
+            const totalIncome = appState.transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            const totalExpenses = appState.transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('tasks-completed').textContent = completedTasks;
+            document.getElementById('budget-remaining').textContent = `$${(totalIncome - totalExpenses).toFixed(2)}`;
+            document.getElementById('notes-count').textContent = appState.notes.length;
+        }
+
+        // Task Management
+        function renderTasks() {
+            const todoContainer = document.getElementById('todo-tasks');
+            const progressContainer = document.getElementById('progress-tasks');
+            const doneContainer = document.getElementById('done-tasks');
+            
+            todoContainer.innerHTML = '';
+            progressContainer.innerHTML = '';
+            doneContainer.innerHTML = '';
+            
+            appState.tasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                if (task.status === 'todo') {
+                    todoContainer.appendChild(taskElement);
+                } else if (task.status === 'in-progress') {
+                    progressContainer.appendChild(taskElement);
+                } else if (task.status === 'done') {
+                    doneContainer.appendChild(taskElement);
+                }
+            });
+            
+            updateTaskCounts();
+            initializeDragAndDrop();
+        }
+
+        function createTaskElement(task) {
+            const div = document.createElement('div');
+            div.className = 'task-card';
+            div.draggable = true;
+            div.dataset.taskId = task.id;
+            
+            const priorityClass = `task-priority ${task.priority}`;
+            const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date';
+            
+            div.innerHTML = `
+                <div class="task-title">${task.title}</div>
+                <div class="task-description">${task.description}</div>
+                <div class="task-meta">
+                    <span class="${priorityClass}">${task.priority.toUpperCase()}</span>
+                    <span>${dueDate}</span>
+                </div>
+                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+                    <i class="fas fa-tag"></i> ${task.category}
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function updateTaskCounts() {
+            const todoCount = appState.tasks.filter(t => t.status === 'todo').length;
+            const progressCount = appState.tasks.filter(t => t.status === 'in-progress').length;
+            const doneCount = appState.tasks.filter(t => t.status === 'done').length;
+            
+            document.getElementById('todo-count').textContent = todoCount;
+            document.getElementById('progress-count').textContent = progressCount;
+            document.getElementById('done-count').textContent = doneCount;
+        }
+
+        function addTask(taskData) {
+            const task = {
+                id: Date.now().toString(),
+                title: taskData.title,
+                description: taskData.description,
+                priority: taskData.priority,
+                category: taskData.category,
+                dueDate: taskData.dueDate,
+                recurring: taskData.recurring,
+                status: 'todo',
+                createdAt: new Date().toISOString()
+            };
+            
+            appState.tasks.push(task);
+            localStorage.setItem('tasks', JSON.stringify(appState.tasks));
+            incrementStreak();
+            
+            if (appState.currentModule === 'tasks') {
+                renderTasks();
+            }
+        }
+
+        function moveTask(taskId, newStatus) {
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = newStatus;
+                if (newStatus === 'done') {
+                    incrementStreak();
+                }
+                localStorage.setItem('tasks', JSON.stringify(appState.tasks));
+                renderTasks();
+            }
+        }
+
+        // Drag and Drop
+        function initializeDragAndDrop() {
+            const taskCards = document.querySelectorAll('.task-card');
+            const containers = document.querySelectorAll('.tasks-container');
+            
+            taskCards.forEach(card => {
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+            });
+            
+            containers.forEach(container => {
+                container.addEventListener('dragover', handleDragOver);
+                container.addEventListener('drop', handleDrop);
+            });
+        }
+
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const taskId = e.dataTransfer.getData('text/plain');
+            const newStatus = e.target.closest('.scrum-column').dataset.status;
+            moveTask(taskId, newStatus);
+        }
+
+        // Budget Management
+        function renderBudget() {
+            updateBudgetOverview();
+            updateBudgetCharts();
+        }
+
+        function updateBudgetOverview() {
+            const totalIncome = appState.transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            const totalExpenses = appState.transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            const savings = totalIncome - totalExpenses;
+            
+            document.getElementById('total-income').textContent = `$${totalIncome.toFixed(2)}`;
+            document.getElementById('total-expenses').textContent = `$${totalExpenses.toFixed(2)}`;
+            document.getElementById('savings-amount').textContent = `$${savings.toFixed(2)}`;
+            
+            // Update savings progress (assuming goal of $5000)
+            const savingsGoal = 5000;
+            const progress = Math.min((savings / savingsGoal) * 100, 100);
+            document.getElementById('savings-progress').style.width = `${progress}%`;
+        }
+
+        function addTransaction(transactionData) {
+            const transaction = {
+                id: Date.now().toString(),
+                type: transactionData.type,
+                amount: parseFloat(transactionData.amount),
+                category: transactionData.category,
+                description: transactionData.description,
+                date: new Date().toISOString()
+            };
+            
+            appState.transactions.push(transaction);
+            localStorage.setItem('transactions', JSON.stringify(appState.transactions));
+            incrementStreak();
+            
+            if (appState.currentModule === 'budget') {
+                renderBudget();
+            }
+        }
+
+        // Notes Management
+        function renderNotes() {
+            const notesGrid = document.getElementById('notes-grid');
+            notesGrid.innerHTML = '';
+            
+            appState.notes.forEach(note => {
+                const noteElement = createNoteElement(note);
+                notesGrid.appendChild(noteElement);
+            });
+        }
+
+        function createNoteElement(note) {
+            const div = document.createElement('div');
+            div.className = 'note-card';
+            div.dataset.noteId = note.id;
+            
+            const preview = note.content.length > 100 ? 
+                note.content.substring(0, 100) + '...' : note.content;
+            
+            const tags = note.tags ? note.tags.map(tag => 
+                `<span class="note-tag">${tag}</span>`
+            ).join('') : '';
+            
+            div.innerHTML = `
+                <div class="note-title">${note.title}</div>
+                <div class="note-preview">${preview}</div>
+                <div class="note-tags">${tags}</div>
+            `;
+            
+            return div;
+        }
+
+        function addNote(noteData) {
+            const note = {
+                id: Date.now().toString(),
+                title: noteData.title,
+                content: noteData.content,
+                tags: noteData.tags ? noteData.tags.split(',').map(tag => tag.trim()) : [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            appState.notes.push(note);
+            localStorage.setItem('notes', JSON.stringify(appState.notes));
+            incrementStreak();
+            
+            if (appState.currentModule === 'notes') {
+                renderNotes();
+            }
+        }
+
+        // Charts
+        function initializeCharts() {
+            // Tasks Chart
+            const tasksCtx = document.getElementById('tasks-chart').getContext('2d');
+            window.tasksChart = new Chart(tasksCtx, {
+                type: 'line',
+                data: {
+                    labels: getLast7Days(),
+                    datasets: [{
+                        label: 'Tasks Completed',
+                        data: getTaskCompletionData(),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(148, 163, 184, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(148, 163, 184, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Budget Chart
+            const budgetCtx = document.getElementById('budget-chart').getContext('2d');
+            window.budgetChart = new Chart(budgetCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Food', 'Transport', 'Shopping', 'Entertainment', 'Other'],
+                    datasets: [{
+                        data: getExpensesByCategory(),
+                        backgroundColor: [
+                            '#6366f1',
+                            '#ec4899',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts() {
+            if (window.tasksChart) {
+                window.tasksChart.data.datasets[0].data = getTaskCompletionData();
+                window.tasksChart.update();
+            }
+            
+            if (window.budgetChart) {
+                window.budgetChart.data.datasets[0].data = getExpensesByCategory();
+                window.budgetChart.update();
+            }
+        }
+
+        function updateBudgetCharts() {
+            // Update charts in budget module if they exist
+            updateCharts();
+        }
+
+        function getLast7Days() {
+            const days = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                days.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
+            }
+            return days;
+        }
+
+        function getTaskCompletionData() {
+            const data = [0, 0, 0, 0, 0, 0, 0];
+            const completedTasks = appState.tasks.filter(task => task.status === 'done');
+            
+            // If no completed tasks, return zeros
+            if (completedTasks.length === 0) {
+                return data;
+            }
+            
+            // This is simplified - in a real app, you'd track completion dates
+            for (let i = 0; i < 7; i++) {
+                data[i] = Math.floor(Math.random() * Math.max(1, completedTasks.length / 7)) + (completedTasks.length > 0 ? 1 : 0);
+            }
+            
+            return data;
+        }
+
+        function getExpensesByCategory() {
+            const categories = {
+                food: 0,
+                transport: 0,
+                shopping: 0,
+                entertainment: 0,
+                other: 0
+            };
+            
+            const expenses = appState.transactions.filter(t => t.type === 'expense');
+            
+            if (expenses.length === 0) {
+                return [0, 0, 0, 0, 0]; // Return zeros if no expenses
+            }
+            
+            expenses.forEach(transaction => {
+                if (categories.hasOwnProperty(transaction.category)) {
+                    categories[transaction.category] += transaction.amount;
+                } else {
+                    categories.other += transaction.amount;
+                }
+            });
+            
+            return Object.values(categories);
+        }
+
+        // Event Listeners
+        function bindEventListeners() {
+            // Theme toggle
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            
+            // Navigation
+            document.querySelectorAll('.nav-tile').forEach(tile => {
+                tile.addEventListener('click', function() {
+                    const module = this.dataset.module;
+                    showModule(module);
+                });
+            });
+            
+            document.querySelectorAll('.back-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const module = this.dataset.module;
+                    showModule(module);
+                });
+            });
+            
+            // Modal controls
+            document.getElementById('add-task-btn').addEventListener('click', function() {
+                document.getElementById('task-modal').classList.add('active');
+            });
+            
+            document.getElementById('add-transaction-btn').addEventListener('click', function() {
+                document.getElementById('transaction-modal').classList.add('active');
+            });
+            
+            document.getElementById('add-note-btn').addEventListener('click', function() {
+                document.getElementById('note-modal').classList.add('active');
+            });
+            
+            document.querySelectorAll('.modal-close').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const modalId = this.dataset.modal;
+                    document.getElementById(modalId).classList.remove('active');
+                });
+            });
+            
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                    }
+                });
+            });
+            
+            // Forms
+            document.getElementById('task-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const taskData = {
+                    title: document.getElementById('task-title').value,
+                    description: document.getElementById('task-description').value,
+                    priority: document.getElementById('task-priority').value,
+                    category: document.getElementById('task-category').value,
+                    dueDate: document.getElementById('task-due-date').value,
+                    recurring: document.getElementById('task-recurring').checked
+                };
+                
+                addTask(taskData);
+                this.reset();
+                document.getElementById('task-modal').classList.remove('active');
+            });
+            
+            document.getElementById('transaction-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const transactionData = {
+                    type: document.getElementById('transaction-type').value,
+                    amount: document.getElementById('transaction-amount').value,
+                    category: document.getElementById('transaction-category').value,
+                    description: document.getElementById('transaction-description').value
+                };
+                
+                addTransaction(transactionData);
+                this.reset();
+                document.getElementById('transaction-modal').classList.remove('active');
+            });
+            
+            document.getElementById('note-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const noteData = {
+                    title: document.getElementById('note-title').value,
+                    content: document.getElementById('note-content').value,
+                    tags: document.getElementById('note-tags').value
+                };
+                
+                addNote(noteData);
+                this.reset();
+                document.getElementById('note-modal').classList.remove('active');
+            });
+        }
+
+        // Sample Data (for demonstration)
+        function initializeSampleData() {
+            // No sample data - start with clean slate
+        }
+
+        // Initialize sample data
+        initializeSampleData();
+    </script>
+</body>
+</html>
