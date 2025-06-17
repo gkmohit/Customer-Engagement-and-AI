@@ -224,6 +224,73 @@
             gap: 1rem;
         }
 
+        .gamification-stats {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-right: 1rem;
+        }
+
+        .gamification-stats > div {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .level-display {
+            background: var(--gradient-primary);
+            color: white !important;
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .xp-display {
+            position: relative;
+            background: var(--bg-tertiary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            min-width: 80px;
+        }
+
+        .xp-progress-container {
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 0 0 12px 12px;
+            overflow: hidden;
+        }
+
+        .xp-progress-bar {
+            height: 100%;
+            background: var(--gradient-primary);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .badges-display {
+            background: var(--gradient-secondary);
+            color: white !important;
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3);
+        }
+
+        .badges-display:hover {
+            transform: scale(1.05);
+        }
+
         .theme-toggle {
             background: var(--bg-tertiary);
             border: 1px solid var(--border);
@@ -249,6 +316,105 @@
             border-radius: 20px;
             font-weight: 600;
             font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Gamification Animations */
+        @keyframes xpFloat {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes levelUpPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            20% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 1;
+            }
+            40% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            80% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes badgeSlideDown {
+            0% {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+            20% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            80% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+        }
+
+        /* Badge Display Styles */
+        .badge-notification h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .badge-notification h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.2rem;
+        }
+
+        .badge-notification p {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .badge-notification small {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .badge-notification i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Level Up Notification Styles */
+        .level-up-notification h3 {
+            margin: 0.5rem 0;
+            font-size: 1.5rem;
+        }
+
+        .level-up-notification p {
+            margin: 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .level-up-notification i {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
         }
 
         /* Main Content */
@@ -1144,6 +1310,22 @@
                 padding: 1rem;
             }
 
+            .gamification-stats {
+                flex-direction: column;
+                gap: 0.5rem;
+                margin-right: 0.5rem;
+            }
+
+            .gamification-stats > div {
+                font-size: 0.8rem;
+                padding: 0.3rem 0.6rem;
+            }
+
+            .level-display, .xp-display, .badges-display, .streak-counter {
+                padding: 0.3rem 0.6rem;
+                border-radius: 10px;
+            }
+
             .main-content {
                 padding: 1rem;
             }
@@ -1239,9 +1421,26 @@
                 Zenith
             </div>
             <div class="header-controls">
-                <div class="streak-counter">
-                    <i class="fas fa-fire"></i>
-                    <span id="streak-count">0</span> day streak
+                <div class="gamification-stats">
+                    <div class="level-display">
+                        <i class="fas fa-star"></i>
+                        <span>Level <span id="user-level">1</span></span>
+                    </div>
+                    <div class="xp-display">
+                        <i class="fas fa-bolt"></i>
+                        <span id="user-xp">0</span> XP
+                        <div class="xp-progress-container">
+                            <div class="xp-progress-bar" id="xp-progress"></div>
+                        </div>
+                    </div>
+                    <div class="streak-counter">
+                        <i class="fas fa-fire"></i>
+                        <span id="streak-count">0</span> day streak
+                    </div>
+                    <div class="badges-display">
+                        <i class="fas fa-trophy"></i>
+                        <span id="badge-count">0</span> badges
+                    </div>
                 </div>
                 <button class="theme-toggle" id="theme-toggle">
                     <i class="fas fa-moon"></i>
@@ -1668,7 +1867,10 @@
                 notes: ['work', 'personal', 'ideas', 'meeting', 'important', 'project']
             },
             streak: parseInt(localStorage.getItem('streak')) || 0,              // Daily activity streak
-            lastActivity: localStorage.getItem('lastActivity') || null          // Last activity date
+            lastActivity: localStorage.getItem('lastActivity') || null,         // Last activity date
+            xp: parseInt(localStorage.getItem('xp')) || 0,                      // Experience points
+            level: parseInt(localStorage.getItem('level')) || 1,               // User level
+            badges: JSON.parse(localStorage.getItem('badges')) || []           // Earned badges
         };
 
         /**
@@ -1693,6 +1895,8 @@
             // clearSampleData();
             setTheme(appState.theme);           // Apply saved theme
             updateStreak();                     // Update activity streak
+            updateXPDisplay();                  // Update XP and level display
+            updateBadgeCount();                 // Update badge count
             updateFormCategories();             // Initialize form categories
             renderDashboard();                  // Render dashboard content
             bindEventListeners();               // Set up event handlers
@@ -1766,6 +1970,9 @@
             }
             
             document.getElementById('streak-count').textContent = appState.streak;
+            
+            // Check for streak badges
+            checkBadges('streak-update');
         }
 
         /**
@@ -1781,6 +1988,399 @@
                 localStorage.setItem('lastActivity', today);
                 document.getElementById('streak-count').textContent = appState.streak;
             }
+        }
+
+        /**
+         * XP AND BADGE SYSTEM
+         * ===================
+         * Advanced gamification with experience points, levels, and achievement badges
+         */
+
+        /**
+         * Level requirements following the formula 5^n where n is 1 to 10
+         * Each level requires exponentially more XP to achieve
+         */
+        const LEVEL_REQUIREMENTS = [
+            5,      // Level 1 to 2
+            25,     // Level 2 to 3
+            125,    // Level 3 to 4
+            625,    // Level 4 to 5
+            3125,   // Level 5 to 6
+            15625,  // Level 6 to 7
+            78125,  // Level 7 to 8
+            390625, // Level 8 to 9
+            1953125,// Level 9 to 10
+            9765625 // Level 10 to 11
+        ];
+
+        /**
+         * Badge definitions with requirements and rewards
+         */
+        const BADGE_DEFINITIONS = {
+            // Task completion badges
+            'first-task': { name: 'Task Starter', description: 'Complete your first task', icon: 'fas fa-check', xpReward: 10 },
+            'task-warrior': { name: 'Task Warrior', description: 'Complete 10 tasks', icon: 'fas fa-sword', xpReward: 50 },
+            'task-master': { name: 'Task Master', description: 'Complete 50 tasks', icon: 'fas fa-crown', xpReward: 100 },
+            
+            // Budget tracking badges
+            'budget-beginner': { name: 'Budget Beginner', description: 'Add your first transaction', icon: 'fas fa-coins', xpReward: 10 },
+            'financial-tracker': { name: 'Financial Tracker', description: 'Add 25 transactions', icon: 'fas fa-chart-line', xpReward: 50 },
+            'money-manager': { name: 'Money Manager', description: 'Add 100 transactions', icon: 'fas fa-piggy-bank', xpReward: 100 },
+            
+            // Note taking badges
+            'note-taker': { name: 'Note Taker', description: 'Create your first note', icon: 'fas fa-sticky-note', xpReward: 10 },
+            'knowledge-keeper': { name: 'Knowledge Keeper', description: 'Create 20 notes', icon: 'fas fa-book', xpReward: 50 },
+            'wisdom-collector': { name: 'Wisdom Collector', description: 'Create 100 notes', icon: 'fas fa-scroll', xpReward: 100 },
+            
+            // Streak badges
+            'streak-starter': { name: 'Streak Starter', description: 'Maintain a 7-day streak', icon: 'fas fa-fire', xpReward: 25 },
+            'consistency-king': { name: 'Consistency King', description: 'Maintain a 30-day streak', icon: 'fas fa-trophy', xpReward: 100 },
+            
+            // Level badges
+            'level-up': { name: 'Level Up!', description: 'Reach level 2', icon: 'fas fa-star', xpReward: 20 },
+            'rising-star': { name: 'Rising Star', description: 'Reach level 5', icon: 'fas fa-rocket', xpReward: 100 },
+            'productivity-legend': { name: 'Productivity Legend', description: 'Reach level 10', icon: 'fas fa-gem', xpReward: 500 }
+        };
+
+        /**
+         * Add experience points and check for level ups and new badges
+         * @param {number} points - XP points to add
+         * @param {string} source - Source of XP ('task', 'budget', 'note', 'badge')
+         */
+        function addXP(points, source = 'general') {
+            const oldXP = appState.xp;
+            const oldLevel = appState.level;
+            
+            appState.xp += points;
+            localStorage.setItem('xp', appState.xp);
+            
+            // Check for level up
+            const newLevel = calculateLevel(appState.xp);
+            if (newLevel > oldLevel) {
+                appState.level = newLevel;
+                localStorage.setItem('level', appState.level);
+                showLevelUpNotification(newLevel);
+                checkLevelBadges(newLevel);
+            }
+            
+            // Update XP display
+            updateXPDisplay();
+            
+            // Show XP gain animation
+            showXPGainAnimation(points, source);
+            
+            console.log(`XP gained: +${points} from ${source}. Total XP: ${appState.xp}, Level: ${appState.level}`);
+        }
+
+        /**
+         * Calculate user level based on total XP
+         * @param {number} totalXP - Total experience points
+         * @returns {number} Current level
+         */
+        function calculateLevel(totalXP) {
+            let level = 1;
+            let xpNeeded = 0;
+            
+            for (let i = 0; i < LEVEL_REQUIREMENTS.length; i++) {
+                xpNeeded += LEVEL_REQUIREMENTS[i];
+                if (totalXP >= xpNeeded) {
+                    level = i + 2; // Level starts at 1, array starts at 0
+                } else {
+                    break;
+                }
+            }
+            
+            return level;
+        }
+
+        /**
+         * Get XP needed for next level
+         * @returns {Object} Object with current XP, XP needed for next level, and progress percentage
+         */
+        function getNextLevelProgress() {
+            const currentLevel = appState.level;
+            
+            if (currentLevel > LEVEL_REQUIREMENTS.length) {
+                return { current: appState.xp, needed: 0, progress: 100, maxLevel: true };
+            }
+            
+            // Calculate total XP needed for current level
+            let xpForCurrentLevel = 0;
+            for (let i = 0; i < currentLevel - 1; i++) {
+                xpForCurrentLevel += LEVEL_REQUIREMENTS[i];
+            }
+            
+            // Calculate total XP needed for next level
+            const xpForNextLevel = xpForCurrentLevel + LEVEL_REQUIREMENTS[currentLevel - 1];
+            
+            const currentLevelXP = appState.xp - xpForCurrentLevel;
+            const xpNeededForNext = LEVEL_REQUIREMENTS[currentLevel - 1];
+            const progress = Math.min((currentLevelXP / xpNeededForNext) * 100, 100);
+            
+            return {
+                current: currentLevelXP,
+                needed: xpNeededForNext,
+                progress: progress,
+                maxLevel: false
+            };
+        }
+
+        /**
+         * Update XP and level display in the UI
+         */
+        function updateXPDisplay() {
+            const levelElement = document.getElementById('user-level');
+            const xpElement = document.getElementById('user-xp');
+            const progressBar = document.getElementById('xp-progress');
+            
+            if (levelElement) levelElement.textContent = appState.level;
+            if (xpElement) xpElement.textContent = appState.xp;
+            
+            if (progressBar) {
+                const progress = getNextLevelProgress();
+                progressBar.style.width = `${progress.progress}%`;
+                progressBar.setAttribute('title', `${progress.current}/${progress.needed} XP to next level`);
+            }
+        }
+
+        /**
+         * Check and award badges based on user actions
+         * @param {string} action - Action type ('task-complete', 'transaction-add', 'note-create', etc.)
+         * @param {Object} data - Additional data for badge checking
+         */
+        function checkBadges(action, data = {}) {
+            const newBadges = [];
+            
+            // Count current achievements
+            const completedTasks = appState.tasks.filter(task => task.status === 'done').length;
+            const totalTransactions = appState.transactions.length;
+            const totalNotes = appState.notes.length;
+            const currentStreak = appState.streak;
+            
+            // Task badges
+            if (action === 'task-complete') {
+                if (completedTasks === 1 && !hasBadge('first-task')) {
+                    newBadges.push('first-task');
+                } else if (completedTasks === 10 && !hasBadge('task-warrior')) {
+                    newBadges.push('task-warrior');
+                } else if (completedTasks === 50 && !hasBadge('task-master')) {
+                    newBadges.push('task-master');
+                }
+            }
+            
+            // Budget badges
+            if (action === 'transaction-add') {
+                if (totalTransactions === 1 && !hasBadge('budget-beginner')) {
+                    newBadges.push('budget-beginner');
+                } else if (totalTransactions === 25 && !hasBadge('financial-tracker')) {
+                    newBadges.push('financial-tracker');
+                } else if (totalTransactions === 100 && !hasBadge('money-manager')) {
+                    newBadges.push('money-manager');
+                }
+            }
+            
+            // Note badges
+            if (action === 'note-create') {
+                if (totalNotes === 1 && !hasBadge('note-taker')) {
+                    newBadges.push('note-taker');
+                } else if (totalNotes === 20 && !hasBadge('knowledge-keeper')) {
+                    newBadges.push('knowledge-keeper');
+                } else if (totalNotes === 100 && !hasBadge('wisdom-collector')) {
+                    newBadges.push('wisdom-collector');
+                }
+            }
+            
+            // Streak badges
+            if (action === 'streak-update') {
+                if (currentStreak === 7 && !hasBadge('streak-starter')) {
+                    newBadges.push('streak-starter');
+                } else if (currentStreak === 30 && !hasBadge('consistency-king')) {
+                    newBadges.push('consistency-king');
+                }
+            }
+            
+            // Award new badges
+            newBadges.forEach(badgeId => {
+                awardBadge(badgeId);
+            });
+        }
+
+        /**
+         * Check for level-based badges
+         * @param {number} level - Current user level
+         */
+        function checkLevelBadges(level) {
+            if (level === 2 && !hasBadge('level-up')) {
+                awardBadge('level-up');
+            } else if (level === 5 && !hasBadge('rising-star')) {
+                awardBadge('rising-star');
+            } else if (level === 10 && !hasBadge('productivity-legend')) {
+                awardBadge('productivity-legend');
+            }
+        }
+
+        /**
+         * Check if user has a specific badge
+         * @param {string} badgeId - Badge identifier
+         * @returns {boolean} True if user has the badge
+         */
+        function hasBadge(badgeId) {
+            return appState.badges.some(badge => badge.id === badgeId);
+        }
+
+        /**
+         * Award a badge to the user
+         * @param {string} badgeId - Badge identifier to award
+         */
+        function awardBadge(badgeId) {
+            const badgeDefinition = BADGE_DEFINITIONS[badgeId];
+            if (!badgeDefinition || hasBadge(badgeId)) return;
+            
+            const badge = {
+                id: badgeId,
+                ...badgeDefinition,
+                dateEarned: new Date().toISOString()
+            };
+            
+            appState.badges.push(badge);
+            localStorage.setItem('badges', JSON.stringify(appState.badges));
+            
+            // Award bonus XP for earning badge
+            addXP(badge.xpReward, 'badge');
+            
+            // Update badge count display
+            updateBadgeCount();
+            
+            // Show badge earned notification
+            showBadgeNotification(badge);
+            
+            console.log(`Badge earned: ${badge.name}`);
+        }
+
+        /**
+         * Update badge count display in the header
+         */
+        function updateBadgeCount() {
+            const badgeCountElement = document.getElementById('badge-count');
+            if (badgeCountElement) {
+                badgeCountElement.textContent = appState.badges.length;
+            }
+        }
+
+        /**
+         * Show XP gain animation
+         * @param {number} points - XP points gained
+         * @param {string} source - Source of XP gain
+         */
+        function showXPGainAnimation(points, source) {
+            // Create floating XP indicator
+            const xpIndicator = document.createElement('div');
+            xpIndicator.className = 'xp-gain-indicator';
+            xpIndicator.innerHTML = `+${points} XP`;
+            xpIndicator.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--gradient-accent);
+                color: white;
+                padding: 0.5rem 1rem;
+                border-radius: 25px;
+                font-weight: bold;
+                font-size: 0.9rem;
+                z-index: 1000;
+                animation: xpFloat 2s ease-out forwards;
+                pointer-events: none;
+            `;
+            
+            document.body.appendChild(xpIndicator);
+            
+            // Remove after animation
+            setTimeout(() => {
+                if (xpIndicator.parentNode) {
+                    xpIndicator.parentNode.removeChild(xpIndicator);
+                }
+            }, 2000);
+        }
+
+        /**
+         * Show level up notification
+         * @param {number} newLevel - New level achieved
+         */
+        function showLevelUpNotification(newLevel) {
+            const notification = document.createElement('div');
+            notification.className = 'level-up-notification';
+            notification.innerHTML = `
+                <div class="level-up-content">
+                    <i class="fas fa-star"></i>
+                    <h3>Level Up!</h3>
+                    <p>You've reached level ${newLevel}!</p>
+                </div>
+            `;
+            notification.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: var(--gradient-primary);
+                color: white;
+                padding: 2rem;
+                border-radius: 20px;
+                text-align: center;
+                z-index: 1001;
+                animation: levelUpPulse 3s ease-out forwards;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after animation
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+
+        /**
+         * Show badge earned notification
+         * @param {Object} badge - Badge object with name, description, icon
+         */
+        function showBadgeNotification(badge) {
+            const notification = document.createElement('div');
+            notification.className = 'badge-notification';
+            notification.innerHTML = `
+                <div class="badge-content">
+                    <i class="${badge.icon}"></i>
+                    <h4>Badge Earned!</h4>
+                    <h3>${badge.name}</h3>
+                    <p>${badge.description}</p>
+                    <small>+${badge.xpReward} XP Bonus</small>
+                </div>
+            `;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--gradient-secondary);
+                color: white;
+                padding: 1.5rem;
+                border-radius: 15px;
+                text-align: center;
+                z-index: 1001;
+                animation: badgeSlideDown 4s ease-out forwards;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                max-width: 300px;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after animation
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 4000);
         }
 
         /**
@@ -2348,10 +2948,16 @@
         function moveTask(taskId, newStatus) {
             const task = appState.tasks.find(t => t.id === taskId);
             if (task && task.status !== newStatus) {
+                const wasCompleted = task.status === 'done';
                 task.status = newStatus;
-                if (newStatus === 'done') {
+                
+                // Award XP for task completion
+                if (newStatus === 'done' && !wasCompleted) {
+                    addXP(5, 'task');
+                    checkBadges('task-complete');
                     incrementStreak();
                 }
+                
                 localStorage.setItem('tasks', JSON.stringify(appState.tasks));
                 renderTasks();
                 
@@ -2536,6 +3142,10 @@
             
             appState.transactions.push(transaction);
             localStorage.setItem('transactions', JSON.stringify(appState.transactions));
+            
+            // Award XP for budget tracking
+            addXP(5, 'budget');
+            checkBadges('transaction-add');
             incrementStreak();
             
             console.log('Transaction added:', transaction);
@@ -2746,6 +3356,12 @@
                 };
                 
                 appState.notes.push(note);
+                
+                // Award XP based on content length (description * 5)
+                const contentLength = noteData.content.length;
+                const xpToAward = Math.max(contentLength * 5, 5); // Minimum 5 XP
+                addXP(xpToAward, 'note');
+                checkBadges('note-create');
                 incrementStreak();
             }
             
