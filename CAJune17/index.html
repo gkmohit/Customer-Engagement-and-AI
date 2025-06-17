@@ -437,6 +437,11 @@
             margin-bottom: 1rem;
             cursor: grab;
             transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .task-card:active {
+            cursor: grabbing;
         }
 
         .task-card:hover {
@@ -447,6 +452,19 @@
         .task-card.dragging {
             opacity: 0.5;
             transform: rotate(5deg);
+        }
+
+        .tasks-container {
+            min-height: 100px;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tasks-container.drag-over {
+            background: rgba(99, 102, 241, 0.1);
+            border: 2px dashed var(--primary);
+            border-radius: 8px;
         }
 
         .task-title {
@@ -483,6 +501,23 @@
         .task-priority.low {
             background: var(--success);
             color: white;
+        }
+
+        .move-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-right: 0.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .move-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
         }
 
         /* Budget Tracker Styles */
@@ -1120,8 +1155,8 @@
         });
 
         function initializeApp() {
-            // Clear any existing sample data
-            clearSampleData();
+            // Only clear sample data on first run, not every time
+            // clearSampleData();
             setTheme(appState.theme);
             updateStreak();
             renderDashboard();
@@ -1130,6 +1165,7 @@
         }
 
         function clearSampleData() {
+            // This function is now only called manually if needed
             // Clear localStorage to start fresh
             localStorage.removeItem('tasks');
             localStorage.removeItem('transactions');
@@ -1245,6 +1281,7 @@
             });
             
             updateTaskCounts();
+            // Re-initialize drag and drop after rendering tasks
             initializeDragAndDrop();
         }
 
@@ -1257,6 +1294,16 @@
             const priorityClass = `task-priority ${task.priority}`;
             const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date';
             
+            // Add move buttons for better UX
+            let moveButtons = '';
+            if (task.status === 'todo') {
+                moveButtons = '<button class="move-btn" onclick="moveTaskToStatus(\'' + task.id + '\', \'in-progress\')">→ In Progress</button>';
+            } else if (task.status === 'in-progress') {
+                moveButtons = '<button class="move-btn" onclick="moveTaskToStatus(\'' + task.id + '\', \'todo\')">← To Do</button> <button class="move-btn" onclick="moveTaskToStatus(\'' + task.id + '\', \'done\')">→ Done</button>';
+            } else if (task.status === 'done') {
+                moveButtons = '<button class="move-btn" onclick="moveTaskToStatus(\'' + task.id + '\', \'in-progress\')">← In Progress</button>';
+            }
+            
             div.innerHTML = `
                 <div class="task-title">${task.title}</div>
                 <div class="task-description">${task.description}</div>
@@ -1266,6 +1313,9 @@
                 </div>
                 <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
                     <i class="fas fa-tag"></i> ${task.category}
+                </div>
+                <div class="task-actions" style="margin-top: 0.5rem; font-size: 0.8rem;">
+                    ${moveButtons}
                 </div>
             `;
             
@@ -1299,29 +1349,54 @@
             localStorage.setItem('tasks', JSON.stringify(appState.tasks));
             incrementStreak();
             
+            console.log('Task added:', task);
+            console.log('Current tasks:', appState.tasks);
+            
             if (appState.currentModule === 'tasks') {
                 renderTasks();
             }
+            
+            // Update dashboard stats
+            updateDashboardStats();
         }
 
         function moveTask(taskId, newStatus) {
             const task = appState.tasks.find(t => t.id === taskId);
-            if (task) {
+            if (task && task.status !== newStatus) {
                 task.status = newStatus;
                 if (newStatus === 'done') {
                     incrementStreak();
                 }
                 localStorage.setItem('tasks', JSON.stringify(appState.tasks));
                 renderTasks();
+                
+                // Update dashboard stats if we're viewing dashboard
+                if (appState.currentModule === 'dashboard') {
+                    updateDashboardStats();
+                    updateCharts();
+                }
+                
+                console.log('Task moved successfully:', taskId, 'to', newStatus);
             }
+        }
+
+        // Helper function for button clicks
+        function moveTaskToStatus(taskId, newStatus) {
+            moveTask(taskId, newStatus);
         }
 
         // Drag and Drop
         function initializeDragAndDrop() {
+            console.log('Initializing drag and drop...');
+            
             const taskCards = document.querySelectorAll('.task-card');
             const containers = document.querySelectorAll('.tasks-container');
             
+            console.log('Found task cards:', taskCards.length);
+            console.log('Found containers:', containers.length);
+            
             taskCards.forEach(card => {
+                card.draggable = true;
                 card.addEventListener('dragstart', handleDragStart);
                 card.addEventListener('dragend', handleDragEnd);
             });
@@ -1329,16 +1404,35 @@
             containers.forEach(container => {
                 container.addEventListener('dragover', handleDragOver);
                 container.addEventListener('drop', handleDrop);
+                container.addEventListener('dragenter', handleDragEnter);
+                container.addEventListener('dragleave', handleDragLeave);
             });
         }
 
         function handleDragStart(e) {
-            e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
+            const taskId = e.target.dataset.taskId;
+            console.log('Drag start - Task ID:', taskId);
+            e.dataTransfer.setData('text/plain', taskId);
             e.target.classList.add('dragging');
         }
 
         function handleDragEnd(e) {
             e.target.classList.remove('dragging');
+            document.querySelectorAll('.tasks-container').forEach(container => {
+                container.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            // Only remove if we're leaving the container itself, not a child
+            if (!e.currentTarget.contains(e.relatedTarget)) {
+                e.currentTarget.classList.remove('drag-over');
+            }
         }
 
         function handleDragOver(e) {
@@ -1348,8 +1442,17 @@
         function handleDrop(e) {
             e.preventDefault();
             const taskId = e.dataTransfer.getData('text/plain');
-            const newStatus = e.target.closest('.scrum-column').dataset.status;
-            moveTask(taskId, newStatus);
+            const container = e.currentTarget;
+            const column = container.closest('.scrum-column');
+            const newStatus = column.dataset.status;
+            
+            console.log('Drop - Task ID:', taskId, 'New Status:', newStatus);
+            
+            container.classList.remove('drag-over');
+            
+            if (taskId && newStatus) {
+                moveTask(taskId, newStatus);
+            }
         }
 
         // Budget Management
