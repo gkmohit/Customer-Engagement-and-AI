@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChildCare Activity Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             /* Light theme colors */
@@ -198,7 +198,7 @@
             border-radius: 12px;
             border: 1px solid var(--border-color);
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1fr 2fr;
             gap: 1.5rem;
             align-items: start;
         }
@@ -209,6 +209,7 @@
 
         .search-box input {
             width: 100%;
+            max-width: 300px;
             padding: 1rem 1.2rem;
             border: 2px solid var(--border-color);
             border-radius: 8px;
@@ -438,6 +439,8 @@
             margin-top: 2rem;
             padding: 1rem;
             justify-items: stretch;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .chart-card {
@@ -450,11 +453,18 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            box-sizing: border-box;
+            margin: 0;
         }
 
         @media (max-width: 1200px) {
             .charts-container {
-                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                grid-template-columns: 1fr;
+                padding: 0.5rem;
+            }
+            .chart-card {
+                width: 100%;
+                min-width: 0;
             }
         }
 
@@ -500,6 +510,42 @@
         /* Add padding to chart containers */
         .chart-container {
             padding-bottom: 1rem;
+        }
+
+        .export-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .export-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .export-button svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        @media print {
+            .export-button,
+            .theme-switch-wrapper {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -602,6 +648,13 @@
             <button onclick="closeModal()">Cancel</button>
         </div>
     </div>
+
+    <button onclick="exportToPDF()" class="export-button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export to PDF
+    </button>
 
     <script>
         // Initialize data structure and charts
@@ -1235,6 +1288,85 @@
             document.getElementById('startDate').addEventListener('change', updateActivityLog);
             document.getElementById('endDate').addEventListener('change', updateActivityLog);
         });
+
+        async function exportToPDF() {
+            const childSelect = document.getElementById('childSelect');
+            const childName = childSelect.options[childSelect.selectedIndex].text;
+            
+            if (!childName || childName === 'Select a child') {
+                alert('Please select a child first');
+                return;
+            }
+
+            // Create a clone of the container for PDF export
+            const container = document.querySelector('.container');
+            const exportContainer = container.cloneNode(true);
+            
+            // Remove unnecessary elements from the clone
+            exportContainer.querySelector('.child-selector').remove();
+            exportContainer.querySelector('.activity-buttons').remove();
+            exportContainer.querySelector('.search-filter-container').remove();
+            
+            // Style adjustments for PDF
+            const style = document.createElement('style');
+            style.textContent = `
+                .container { 
+                    background: white !important;
+                    padding: 20px !important;
+                    width: 100% !important;
+                    max-width: none !important;
+                }
+                .chart-card {
+                    background: white !important;
+                    margin-bottom: 20px !important;
+                }
+                .log-entry {
+                    background: white !important;
+                    border: 1px solid #ddd !important;
+                }
+            `;
+            exportContainer.prepend(style);
+
+            // Update the title to include child's name
+            const title = exportContainer.querySelector('h1');
+            title.textContent = `Activity Report for ${childName}`;
+            
+            // Add timestamp
+            const timestamp = document.createElement('p');
+            timestamp.style.textAlign = 'center';
+            timestamp.style.marginBottom = '20px';
+            timestamp.textContent = `Generated on ${new Date().toLocaleString()}`;
+            title.after(timestamp);
+
+            // Configure PDF options
+            const opt = {
+                margin: 10,
+                filename: `${childName.replace(/\s+/g, '_')}_Activity_Report.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Create a temporary container for PDF generation
+            const tempContainer = document.createElement('div');
+            tempContainer.appendChild(exportContainer);
+            document.body.appendChild(tempContainer);
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.top = '0';
+
+            try {
+                // Generate PDF
+                await html2pdf().set(opt).from(exportContainer).save();
+            } finally {
+                // Clean up
+                tempContainer.remove();
+            }
+        }
     </script>
 </body>
 </html>
