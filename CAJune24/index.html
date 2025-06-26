@@ -21,6 +21,7 @@
             --card-background: white;
             --modal-background: white;
             --input-background: white;
+            --bg-secondary: #f0f4f8;      /* Light secondary background */
         }
 
         [data-theme="dark"] {
@@ -457,6 +458,19 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        #sleepPatterns {
+            font-size: 0.9em;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: var(--bg-secondary);
+            margin-top: 10px;
+        }
+
+        /* Add padding to chart containers */
+        .chart-container {
+            padding-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -633,15 +647,51 @@
                 type: 'bar',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Sleep Duration (minutes)',
-                        data: [],
-                        backgroundColor: colors.tealColor
-                    }]
+                    datasets: [
+                        {
+                            label: 'Total Sleep (hours)',
+                            data: [],
+                            backgroundColor: colors.tealColor,
+                            order: 2
+                        },
+                        {
+                            label: 'Avg Nap Duration (minutes)',
+                            data: [],
+                            type: 'line',
+                            borderColor: colors.primaryColor,
+                            borderWidth: 2,
+                            fill: false,
+                            yAxisID: 'y1',
+                            order: 1
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Total Sleep (hours)',
+                                color: colors.textColor
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Avg Nap Duration (minutes)',
+                                color: colors.textColor
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
                 }
             });
 
@@ -910,17 +960,53 @@
             charts.milkIntake.update();
 
             // Update Sleep Chart
-            const sleepData = activities
-                .filter(a => a.type === 'nap')
-                .slice(-5)
-                .map(a => ({
-                    duration: parseInt(a.duration),
-                    time: new Date(a.timestamp).toLocaleTimeString()
-                }));
+            // Get nap activities for the selected child
+            const napActivities = activities.filter(a => a.type === 'nap');
+            analyzeSleepPatterns();
+            
+            // Update sleep chart with last 7 days of data
+            const last7Days = [...Array(7)].map((_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                return date.toISOString().split('T')[0];
+            }).reverse();
 
-            charts.sleep.data.labels = sleepData.map(d => d.time);
-            charts.sleep.data.datasets[0].data = sleepData.map(d => d.duration);
+            const dailyData = last7Days.map(date => {
+                const dayNaps = napActivities.filter(a => 
+                    new Date(a.timestamp).toISOString().split('T')[0] === date
+                );
+                
+                const totalSleepHours = dayNaps.reduce((sum, nap) => 
+                    sum + (parseInt(nap.duration) || 0), 0) / 60;
+                
+                const avgNapDuration = dayNaps.length > 0 
+                    ? dayNaps.reduce((sum, nap) => sum + (parseInt(nap.duration) || 0), 0) / dayNaps.length
+                    : 0;
+
+                return {
+                    date: new Date(date).toLocaleDateString(),
+                    totalSleep: totalSleepHours,
+                    avgNapDuration: avgNapDuration
+                };
+            });
+
+            charts.sleep.data.labels = dailyData.map(d => d.date);
+            charts.sleep.data.datasets[0].data = dailyData.map(d => d.totalSleep);
+            charts.sleep.data.datasets[1].data = dailyData.map(d => d.avgNapDuration);
             charts.sleep.update();
+
+            // Calculate overall sleep statistics
+            const totalNaps = napActivities.length;
+            const totalDuration = napActivities.reduce((sum, nap) => sum + (parseInt(nap.duration) || 0), 0);
+            const avgNapTime = totalNaps > 0 ? Math.round(totalDuration / totalNaps) : 0;
+            const avgNapsPerDay = Math.round((totalNaps / 7) * 10) / 10;
+
+            // Add sleep analysis summary to the chart title
+            const chartTitle = document.querySelector('.chart-card:nth-child(3) .chart-title');
+            chartTitle.innerHTML = `Sleep Analysis<br>
+                <small style="font-size: 0.8em; opacity: 0.8">
+                    Avg: ${avgNapTime} mins/nap | ${avgNapsPerDay} naps/day
+                </small>`;
 
             // Update Diaper Chart
             const diaperCounts = activities
@@ -932,6 +1018,136 @@
 
             charts.diaper.data.datasets[0].data = [diaperCounts.wet, diaperCounts.soiled];
             charts.diaper.update();
+        }
+
+        function analyzeSleepPatterns() {
+            const colors = getThemeColors();
+            const selectedChild = document.getElementById('childSelect').value;
+            const data = JSON.parse(localStorage.getItem('childrenData'));
+            const activities = data.activities[selectedChild] || [];
+            const childActivities = activities.filter(a => a.type === 'nap');
+            
+            // Get the last 7 days of data
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 6);
+            sevenDaysAgo.setHours(0, 0, 0, 0);
+            
+            const dailyData = {};
+            const labels = [];
+            const totalSleepData = [];
+            const avgNapDurationData = [];
+            let totalNaps = 0;
+            let totalDuration = 0;
+
+            // Initialize data for all 7 days
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(sevenDaysAgo);
+                date.setDate(sevenDaysAgo.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+                dailyData[dateStr] = {
+                    naps: [],
+                    totalSleep: 0,
+                    avgDuration: 0
+                };
+                labels.push(dateStr.slice(5)); // Display as MM-DD
+            }
+
+            // Process nap data
+            childActivities.forEach(activity => {
+                const activityDate = new Date(activity.timestamp);
+                if (activityDate >= sevenDaysAgo && activityDate <= today) {
+                    const dateStr = activityDate.toISOString().split('T')[0];
+                    if (dailyData[dateStr]) {
+                        const durationMinutes = activity.details?.duration || 0;
+                        dailyData[dateStr].naps.push(durationMinutes);
+                        dailyData[dateStr].totalSleep += durationMinutes;
+                        totalNaps++;
+                        totalDuration += durationMinutes;
+                    }
+                }
+            });
+
+            // Calculate daily averages and totals
+            Object.keys(dailyData).forEach(date => {
+                const dayData = dailyData[date];
+                dayData.totalSleep = +(dayData.totalSleep / 60).toFixed(1); // Convert to hours
+                dayData.avgDuration = dayData.naps.length > 0 ? 
+                    Math.round(dayData.naps.reduce((a, b) => a + b, 0) / dayData.naps.length) : 0;
+                totalSleepData.push(dayData.totalSleep);
+                avgNapDurationData.push(dayData.avgDuration);
+            });
+
+            // Update sleep chart
+            const overallAvgNapDuration = totalNaps > 0 ? Math.round(totalDuration / totalNaps) : 0;
+            const avgNapsPerDay = +(totalNaps / 7).toFixed(1);
+            
+            charts.sleep.data.labels = labels;
+            charts.sleep.data.datasets[0].data = totalSleepData;
+            charts.sleep.data.datasets[1].data = avgNapDurationData;
+            charts.sleep.options.plugins = {
+                title: {
+                    display: true,
+                    text: `Sleep Analysis (${avgNapsPerDay} naps/day, avg ${overallAvgNapDuration} min/nap)`,
+                    color: colors.textColor
+                }
+            };
+            charts.sleep.update();
+
+            // Look for consistent nap times
+            const napTimePatterns = analyzeNapTimePatterns(childActivities);
+            displayNapPatterns(napTimePatterns);
+        }
+
+        function analyzeNapTimePatterns(activities) {
+            const napTimes = activities.map(activity => {
+                const date = new Date(activity.timestamp);
+                return date.getHours() * 60 + date.getMinutes(); // Convert to minutes since midnight
+            });
+
+            // Group nap times into 30-minute windows
+            const timeWindows = {};
+            napTimes.forEach(time => {
+                const window = Math.floor(time / 30) * 30;
+                timeWindows[window] = (timeWindows[window] || 0) + 1;
+            });
+
+            // Find common nap times (occurring more than once)
+            const commonTimes = Object.entries(timeWindows)
+                .filter(([_, count]) => count > 1)
+                .map(([time, count]) => ({
+                    time: +time,
+                    count: count
+                }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 3); // Top 3 most common times
+
+            return commonTimes;
+        }
+
+        function displayNapPatterns(patterns) {
+            const patternDiv = document.getElementById('sleepPatterns');
+            if (!patternDiv) {
+                const container = document.querySelector('#sleepChart').parentElement;
+                const div = document.createElement('div');
+                div.id = 'sleepPatterns';
+                div.className = 'mt-2 text-center';
+                container.appendChild(div);
+            }
+
+            const formatTime = minutes => {
+                const hrs = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                return `${hrs}:${mins.toString().padStart(2, '0')}`;
+            };
+
+            const patternText = patterns.length > 0 
+                ? `Common nap times: ${patterns.map(p => 
+                    `${formatTime(p.time)} (${p.count}x)`).join(', ')}`
+                : 'No consistent nap patterns detected yet';
+
+            document.getElementById('sleepPatterns').textContent = patternText;
         }
 
         function initTheme() {
