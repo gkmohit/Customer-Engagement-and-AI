@@ -77,9 +77,41 @@
 
         .child-selector {
             margin-bottom: 1.5rem;
+            position: relative;
         }
 
-        .child-selector select, 
+        .child-selector select {
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1.1rem;
+            background-color: var(--input-background);
+            color: var(--text-color);
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .child-selector select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(75, 137, 220, 0.25);
+        }
+
+        .child-selector::after {
+            content: "▼";
+            font-size: 0.8rem;
+            color: var(--text-color);
+            position: absolute;
+            right: 1rem;
+            top: 1.2rem;
+            pointer-events: none;
+        }
+
         .child-selector input,
         button {
             width: 100%;
@@ -88,6 +120,17 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            .child-selector select {
+                padding: 1.2rem;
+                font-size: 1.2rem;
+            }
+
+            .child-selector::after {
+                top: 1.4rem;
+            }
         }
 
         button {
@@ -272,6 +315,7 @@
             gap: 1rem;
             margin-top: 2rem;
             padding: 1rem;
+            justify-items: center;
         }
 
         .chart-card {
@@ -280,6 +324,11 @@
             padding: 1rem;
             box-shadow: 0 2px 4px rgba(75, 137, 220, 0.1);
             border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .chart-title {
@@ -287,12 +336,22 @@
             font-size: 1.1rem;
             margin-bottom: 1rem;
             text-align: center;
+            width: 100%;
         }
 
         .chart-wrapper {
             position: relative;
             height: 300px;
             width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            align-items: center;
+        }
+
+        canvas {
+            max-width: 100%;
+            margin: 0 auto;
         }
 
         @media (max-width: 480px) {
