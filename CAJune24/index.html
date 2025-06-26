@@ -6,12 +6,15 @@
     <title>ChildCare Activity Tracker</title>
     <style>
         :root {
-            --primary-color: #4a90e2;
-            --secondary-color: #f5a623;
-            --success-color: #7ed321;
-            --danger-color: #d0021b;
-            --background-color: #f8f9fa;
-            --text-color: #333;
+            --primary-color: #4B89DC;      /* Soft blue - calming and trustworthy */
+            --secondary-color: #FFA726;    /* Warm orange - energetic and friendly */
+            --success-color: #66BB6A;      /* Soft green - natural and fresh */
+            --danger-color: #EF5350;       /* Soft red - alert but not harsh */
+            --purple-color: #AC92EC;       /* Soft purple - playful and creative */
+            --teal-color: #4DB6AC;         /* Teal - peaceful and professional */
+            --background-color: #F5F7FA;   /* Light grayish blue - soft on eyes */
+            --text-color: #2C3E50;         /* Dark blue gray - easy to read */
+            --border-color: #E3E9EF;       /* Soft gray - subtle borders */
         }
 
         * {
@@ -32,9 +35,10 @@
 
         .container {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(75, 137, 220, 0.1);
+            border: 1px solid var(--border-color);
         }
 
         h1 {
@@ -42,6 +46,7 @@
             text-align: center;
             margin-bottom: 1.5rem;
             font-size: 1.8rem;
+            text-shadow: 1px 1px 0 rgba(75, 137, 220, 0.1);
         }
 
         .child-selector {
@@ -84,22 +89,27 @@
 
         .activity-buttons button[data-type="wet"] {
             background-color: var(--primary-color);
+            background-image: linear-gradient(to bottom right, var(--primary-color), #5D9CEC);
         }
 
         .activity-buttons button[data-type="soiled"] {
             background-color: var(--secondary-color);
+            background-image: linear-gradient(to bottom right, var(--secondary-color), #FFB74D);
         }
 
         .activity-buttons button[data-type="milk"] {
             background-color: var(--success-color);
+            background-image: linear-gradient(to bottom right, var(--success-color), #81C784);
         }
 
         .activity-buttons button[data-type="food"] {
-            background-color: #9b59b6;
+            background-color: var(--purple-color);
+            background-image: linear-gradient(to bottom right, var(--purple-color), #B39DDB);
         }
 
         .activity-buttons button[data-type="nap"] {
-            background-color: #34495e;
+            background-color: var(--teal-color);
+            background-image: linear-gradient(to bottom right, var(--teal-color), #80CBC4);
         }
 
         .activity-log {
@@ -107,11 +117,23 @@
         }
 
         .log-entry {
-            background: #f8f9fa;
+            background: white;
             padding: 1rem;
-            margin-bottom: 0.5rem;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary-color);
+            margin-bottom: 0.8rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(75, 137, 220, 0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .log-entry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(75, 137, 220, 0.1);
+        }
+
+        .activity-details {
+            color: var(--text-color);
+            font-weight: 500;
         }
 
         .timestamp {
