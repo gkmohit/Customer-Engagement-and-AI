@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChildCare Activity Tracker</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5a623;
+            --success-color: #7ed321;
+            --danger-color: #d0021b;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .child-selector {
+            margin-bottom: 1.5rem;
+        }
+
+        .child-selector select, 
+        .child-selector input,
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        .activity-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .activity-buttons button {
+            padding: 1rem;
+        }
+
+        .activity-buttons button[data-type="wet"] {
+            background-color: var(--primary-color);
+        }
+
+        .activity-buttons button[data-type="soiled"] {
+            background-color: var(--secondary-color);
+        }
+
+        .activity-buttons button[data-type="milk"] {
+            background-color: var(--success-color);
+        }
+
+        .activity-buttons button[data-type="food"] {
+            background-color: #9b59b6;
+        }
+
+        .activity-buttons button[data-type="nap"] {
+            background-color: #34495e;
+        }
+
+        .activity-log {
+            margin-top: 2rem;
+        }
+
+        .log-entry {
+            background: #f8f9fa;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 480px) {
+            .activity-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ChildCare Activity Tracker</h1>
+        
+        <div class="child-selector">
+            <select id="childSelect">
+                <option value="">Select a child</option>
+            </select>
+            <button onclick="showAddChildModal()">Add New Child</button>
+        </div>
+
+        <div class="activity-buttons">
+            <button data-type="wet" onclick="logActivity('wet')">Wet Diaper</button>
+            <button data-type="soiled" onclick="logActivity('soiled')">Soiled Diaper</button>
+            <button data-type="milk" onclick="logActivity('milk')">Milk Intake</button>
+            <button data-type="food" onclick="logActivity('food')">Solid Food</button>
+            <button data-type="nap" onclick="logActivity('nap')">Nap Time</button>
+        </div>
+
+        <div class="activity-log" id="activityLog"></div>
+    </div>
+
+    <div id="addChildModal" class="modal">
+        <div class="modal-content">
+            <h2>Add New Child</h2>
+            <input type="text" id="childName" placeholder="Child's Name">
+            <input type="number" id="childAge" placeholder="Age (months)">
+            <button onclick="addChild()">Add Child</button>
+            <button onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="activityModal" class="modal">
+        <div class="modal-content">
+            <h2 id="activityTitle"></h2>
+            <div id="activityInputs"></div>
+            <button onclick="saveActivity()">Save</button>
+            <button onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize data structure
+        let currentActivity = null;
+        
+        if (!localStorage.getItem('childrenData')) {
+            localStorage.setItem('childrenData', JSON.stringify({
+                children: [],
+                activities: {}
+            }));
+        }
+
+        // Load initial data
+        function loadData() {
+            const data = JSON.parse(localStorage.getItem('childrenData'));
+            const select = document.getElementById('childSelect');
+            
+            // Clear existing options
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+
+            // Add children to dropdown
+            data.children.forEach(child => {
+                const option = document.createElement('option');
+                option.value = child.id;
+                option.textContent = child.name;
+                select.appendChild(option);
+            });
+
+            // Update activity log
+            updateActivityLog();
+        }
+
+        // Show add child modal
+        function showAddChildModal() {
+            document.getElementById('addChildModal').style.display = 'flex';
+        }
+
+        // Close any modal
+        function closeModal() {
+            document.getElementById('addChildModal').style.display = 'none';
+            document.getElementById('activityModal').style.display = 'none';
+        }
+
+        // Add new child
+        function addChild() {
+            const name = document.getElementById('childName').value.trim();
+            const age = document.getElementById('childAge').value;
+
+            if (!name || !age) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const data = JSON.parse(localStorage.getItem('childrenData'));
+            const childId = Date.now().toString();
+
+            data.children.push({
+                id: childId,
+                name: name,
+                age: age
+            });
+
+            data.activities[childId] = [];
+
+            localStorage.setItem('childrenData', JSON.stringify(data));
+            loadData();
+            closeModal();
+
+            // Clear inputs
+            document.getElementById('childName').value = '';
+            document.getElementById('childAge').value = '';
+        }
+
+        // Log activity
+        function logActivity(type) {
+            const childId = document.getElementById('childSelect').value;
+            if (!childId) {
+                alert('Please select a child first');
+                return;
+            }
+
+            currentActivity = type;
+            const modal = document.getElementById('activityModal');
+            const title = document.getElementById('activityTitle');
+            const inputs = document.getElementById('activityInputs');
+
+            title.textContent = getActivityTitle(type);
+            inputs.innerHTML = getActivityInputs(type);
+            modal.style.display = 'flex';
+        }
+
+        // Get activity title
+        function getActivityTitle(type) {
+            const titles = {
+                wet: 'Log Wet Diaper',
+                soiled: 'Log Soiled Diaper',
+                milk: 'Log Milk Intake',
+                food: 'Log Solid Food',
+                nap: 'Log Nap Time'
+            };
+            return titles[type];
+        }
+
+        // Get activity inputs
+        function getActivityInputs(type) {
+            switch(type) {
+                case 'milk':
+                    return '<input type="number" id="milkAmount" placeholder="Amount (ml)">';
+                case 'food':
+                    return '<input type="text" id="foodDescription" placeholder="Food Description">';
+                case 'nap':
+                    return '<input type="number" id="napDuration" placeholder="Duration (minutes)">';
+                default:
+                    return '';
+            }
+        }
+
+        // Save activity
+        function saveActivity() {
+            const childId = document.getElementById('childSelect').value;
+            const timestamp = new Date();
+            let activityData = {
+                type: currentActivity,
+                timestamp: timestamp.toISOString()
+            };
+
+            // Add specific data based on activity type
+            switch(currentActivity) {
+                case 'milk':
+                    activityData.amount = document.getElementById('milkAmount').value;
+                    break;
+                case 'food':
+                    activityData.description = document.getElementById('foodDescription').value;
+                    break;
+                case 'nap':
+                    activityData.duration = document.getElementById('napDuration').value;
+                    break;
+            }
+
+            const data = JSON.parse(localStorage.getItem('childrenData'));
+            if (!data.activities[childId]) {
+                data.activities[childId] = [];
+            }
+            data.activities[childId].push(activityData);
+
+            localStorage.setItem('childrenData', JSON.stringify(data));
+            updateActivityLog();
+            closeModal();
+        }
+
+        // Update activity log
+        function updateActivityLog() {
+            const childId = document.getElementById('childSelect').value;
+            const log = document.getElementById('activityLog');
+            log.innerHTML = '';
+
+            if (!childId) return;
+
+            const data = JSON.parse(localStorage.getItem('childrenData'));
+            const activities = data.activities[childId] || [];
+
+            activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                     .forEach(activity => {
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                entry.innerHTML = formatActivity(activity);
+                log.appendChild(entry);
+            });
+        }
+
+        // Format activity for display
+        function formatActivity(activity) {
+            const time = new Date(activity.timestamp).toLocaleString();
+            let details = '';
+
+            switch(activity.type) {
+                case 'wet':
+                    details = 'Wet diaper changed';
+                    break;
+                case 'soiled':
+                    details = 'Soiled diaper changed';
+                    break;
+                case 'milk':
+                    details = `Milk intake: ${activity.amount}ml`;
+                    break;
+                case 'food':
+                    details = `Solid food: ${activity.description}`;
+                    break;
+                case 'nap':
+                    details = `Nap duration: ${activity.duration} minutes`;
+                    break;
+            }
+
+            return `
+                <div class="activity-details">${details}</div>
+                <div class="timestamp">${time}</div>
+            `;
+        }
+
+        // Event listeners
+        document.getElementById('childSelect').addEventListener('change', updateActivityLog);
+
+        // Initial load
+        loadData();
+    </script>
+</body>
+</html>
