@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChildCare Activity Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
+            /* Light theme colors */
             --primary-color: #4B89DC;      /* Soft blue - calming and trustworthy */
             --secondary-color: #FFA726;    /* Warm orange - energetic and friendly */
             --success-color: #66BB6A;      /* Soft green - natural and fresh */
@@ -15,6 +18,27 @@
             --background-color: #F5F7FA;   /* Light grayish blue - soft on eyes */
             --text-color: #2C3E50;         /* Dark blue gray - easy to read */
             --border-color: #E3E9EF;       /* Soft gray - subtle borders */
+            --card-background: white;
+            --modal-background: white;
+            --input-background: white;
+        }
+
+        [data-theme="dark"] {
+            /* Dark theme colors */
+            --background-color: #1a1a1a;
+            --text-color: #E3E9EF;
+            --border-color: #2C3E50;
+            --card-background: #2d2d2d;
+            --modal-background: #2d2d2d;
+            --input-background: #3d3d3d;
+
+            /* Adjust activity colors for dark theme */
+            --primary-color: #5D9CEC;
+            --secondary-color: #FFB74D;
+            --success-color: #81C784;
+            --danger-color: #EF5350;
+            --purple-color: #B39DDB;
+            --teal-color: #80CBC4;
         }
 
         * {
@@ -31,14 +55,16 @@
             padding: 1rem;
             max-width: 600px;
             margin: 0 auto;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .container {
-            background: white;
+            background: var(--card-background);
             border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(75, 137, 220, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
+            transition: background-color 0.3s;
         }
 
         h1 {
@@ -117,11 +143,11 @@
         }
 
         .log-entry {
-            background: white;
+            background: var(--card-background);
+            border-color: var(--border-color);
             padding: 1rem;
             margin-bottom: 0.8rem;
             border-radius: 12px;
-            border: 1px solid var(--border-color);
             box-shadow: 0 2px 4px rgba(75, 137, 220, 0.05);
             transition: transform 0.2s ease;
         }
@@ -154,7 +180,8 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--modal-background);
+            color: var(--text-color);
             padding: 1.5rem;
             border-radius: 12px;
             width: 90%;
@@ -162,11 +189,110 @@
         }
 
         .modal input {
+            background: var(--input-background);
+            color: var(--text-color);
+            border-color: var(--border-color);
             width: 100%;
             padding: 0.8rem;
             margin: 0.5rem 0;
             border: 1px solid #ddd;
             border-radius: 8px;
+        }
+
+        /* Theme toggle switch styles */
+        .theme-switch-wrapper {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .theme-switch {
+            display: inline-block;
+            height: 34px;
+            position: relative;
+            width: 60px;
+        }
+
+        .theme-switch input {
+            display: none;
+        }
+
+        .slider {
+            background-color: #ccc;
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            background-color: #fff;
+            bottom: 4px;
+            content: "";
+            height: 26px;
+            left: 4px;
+            position: absolute;
+            transition: .4s;
+            width: 26px;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .slider:after {
+            content: "☀️";
+            position: absolute;
+            left: 8px;
+            top: 6px;
+            font-size: 16px;
+        }
+
+        input:checked + .slider:after {
+            content: "🌙";
+            left: auto;
+            right: 8px;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+            padding: 1rem;
+        }
+
+        .chart-card {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(75, 137, 220, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-title {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
         }
 
         @media (max-width: 480px) {
@@ -177,6 +303,13 @@
     </style>
 </head>
 <body>
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch">
+            <input type="checkbox" id="theme-toggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+
     <div class="container">
         <h1>ChildCare Activity Tracker</h1>
         
@@ -184,7 +317,7 @@
             <select id="childSelect">
                 <option value="">Select a child</option>
             </select>
-            <button onclick="showAddChildModal()">Add New Child</button>
+            <button id="addChildBtn">Add New Child</button>
         </div>
 
         <div class="activity-buttons">
@@ -195,7 +328,38 @@
             <button data-type="nap" onclick="logActivity('nap')">Nap Time</button>
         </div>
 
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3 class="chart-title">Daily Activity Pattern</h3>
+                <div class="chart-wrapper">
+                    <canvas id="activityPatternChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">Milk Intake Trends</h3>
+                <div class="chart-wrapper">
+                    <canvas id="milkIntakeChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">Sleep Analysis</h3>
+                <div class="chart-wrapper">
+                    <canvas id="sleepChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">Diaper Changes</h3>
+                <div class="chart-wrapper">
+                    <canvas id="diaperChart"></canvas>
+                </div>
+            </div>
+        </div>
+
         <div class="activity-log" id="activityLog"></div>
+
+        <div class="charts-container" id="chartsContainer">
+            <!-- Charts will be injected here by JavaScript -->
+        </div>
     </div>
 
     <div id="addChildModal" class="modal">
@@ -218,8 +382,14 @@
     </div>
 
     <script>
-        // Initialize data structure
+        // Initialize data structure and charts
         let currentActivity = null;
+        let charts = {
+            activityPattern: null,
+            milkIntake: null,
+            sleep: null,
+            diaper: null
+        };
         
         if (!localStorage.getItem('childrenData')) {
             localStorage.setItem('childrenData', JSON.stringify({
@@ -228,17 +398,110 @@
             }));
         }
 
-        // Load initial data
+        function getThemeColors() {
+            return {
+                primaryColor: '#4B89DC',
+                secondaryColor: '#FFA726',
+                successColor: '#66BB6A',
+                tealColor: '#4DB6AC',
+                textColor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#E3E9EF' : '#2C3E50'
+            };
+        }
+
+        function initCharts() {
+            const colors = getThemeColors();
+
+            // Activity Pattern Chart
+            const activityCtx = document.getElementById('activityPatternChart').getContext('2d');
+            charts.activityPattern = new Chart(activityCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Morning', 'Afternoon', 'Evening', 'Night'],
+                    datasets: [{
+                        label: 'Activities',
+                        data: [0, 0, 0, 0],
+                        backgroundColor: colors.primaryColor
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Milk Intake Chart
+            const milkCtx = document.getElementById('milkIntakeChart').getContext('2d');
+            charts.milkIntake = new Chart(milkCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Milk (ml)',
+                        data: [],
+                        borderColor: colors.successColor,
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Sleep Chart
+            const sleepCtx = document.getElementById('sleepChart').getContext('2d');
+            charts.sleep = new Chart(sleepCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Sleep Duration (minutes)',
+                        data: [],
+                        backgroundColor: colors.tealColor
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Diaper Chart
+            const diaperCtx = document.getElementById('diaperChart').getContext('2d');
+            charts.diaper = new Chart(diaperCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Wet', 'Soiled'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: [colors.primaryColor, colors.secondaryColor]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function showAddChildModal() {
+            document.getElementById('addChildModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('addChildModal').style.display = 'none';
+            document.getElementById('activityModal').style.display = 'none';
+        }
+
         function loadData() {
             const data = JSON.parse(localStorage.getItem('childrenData'));
             const select = document.getElementById('childSelect');
             
-            // Clear existing options
             while (select.options.length > 1) {
                 select.remove(1);
             }
 
-            // Add children to dropdown
             data.children.forEach(child => {
                 const option = document.createElement('option');
                 option.value = child.id;
@@ -246,22 +509,10 @@
                 select.appendChild(option);
             });
 
-            // Update activity log
             updateActivityLog();
+            updateCharts();
         }
 
-        // Show add child modal
-        function showAddChildModal() {
-            document.getElementById('addChildModal').style.display = 'flex';
-        }
-
-        // Close any modal
-        function closeModal() {
-            document.getElementById('addChildModal').style.display = 'none';
-            document.getElementById('activityModal').style.display = 'none';
-        }
-
-        // Add new child
         function addChild() {
             const name = document.getElementById('childName').value.trim();
             const age = document.getElementById('childAge').value;
@@ -286,12 +537,10 @@
             loadData();
             closeModal();
 
-            // Clear inputs
             document.getElementById('childName').value = '';
             document.getElementById('childAge').value = '';
         }
 
-        // Log activity
         function logActivity(type) {
             const childId = document.getElementById('childSelect').value;
             if (!childId) {
@@ -309,7 +558,6 @@
             modal.style.display = 'flex';
         }
 
-        // Get activity title
         function getActivityTitle(type) {
             const titles = {
                 wet: 'Log Wet Diaper',
@@ -321,7 +569,6 @@
             return titles[type];
         }
 
-        // Get activity inputs
         function getActivityInputs(type) {
             switch(type) {
                 case 'milk':
@@ -335,7 +582,6 @@
             }
         }
 
-        // Save activity
         function saveActivity() {
             const childId = document.getElementById('childSelect').value;
             const timestamp = new Date();
@@ -344,7 +590,6 @@
                 timestamp: timestamp.toISOString()
             };
 
-            // Add specific data based on activity type
             switch(currentActivity) {
                 case 'milk':
                     activityData.amount = document.getElementById('milkAmount').value;
@@ -365,10 +610,10 @@
 
             localStorage.setItem('childrenData', JSON.stringify(data));
             updateActivityLog();
+            updateCharts();
             closeModal();
         }
 
-        // Update activity log
         function updateActivityLog() {
             const childId = document.getElementById('childSelect').value;
             const log = document.getElementById('activityLog');
@@ -379,16 +624,16 @@
             const data = JSON.parse(localStorage.getItem('childrenData'));
             const activities = data.activities[childId] || [];
 
-            activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                     .forEach(activity => {
-                const entry = document.createElement('div');
-                entry.className = 'log-entry';
-                entry.innerHTML = formatActivity(activity);
-                log.appendChild(entry);
-            });
+            activities
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .forEach(activity => {
+                    const entry = document.createElement('div');
+                    entry.className = 'log-entry';
+                    entry.innerHTML = formatActivity(activity);
+                    log.appendChild(entry);
+                });
         }
 
-        // Format activity for display
         function formatActivity(activity) {
             const time = new Date(activity.timestamp).toLocaleString();
             let details = '';
@@ -417,11 +662,106 @@
             `;
         }
 
-        // Event listeners
-        document.getElementById('childSelect').addEventListener('change', updateActivityLog);
+        function updateCharts() {
+            const childId = document.getElementById('childSelect').value;
+            if (!childId) return;
 
-        // Initial load
-        loadData();
+            const data = JSON.parse(localStorage.getItem('childrenData'));
+            const activities = data.activities[childId] || [];
+            const today = new Date();
+            const todayActivities = activities.filter(a => {
+                const activityDate = new Date(a.timestamp);
+                return activityDate.toDateString() === today.toDateString();
+            });
+
+            // Update Activity Pattern
+            const timeSlots = {
+                morning: 0,
+                afternoon: 0,
+                evening: 0,
+                night: 0
+            };
+
+            todayActivities.forEach(activity => {
+                const hour = new Date(activity.timestamp).getHours();
+                if (hour >= 6 && hour < 12) timeSlots.morning++;
+                else if (hour >= 12 && hour < 17) timeSlots.afternoon++;
+                else if (hour >= 17 && hour < 22) timeSlots.evening++;
+                else timeSlots.night++;
+            });
+
+            charts.activityPattern.data.datasets[0].data = Object.values(timeSlots);
+            charts.activityPattern.update();
+
+            // Update Milk Intake Chart
+            const milkData = activities
+                .filter(a => a.type === 'milk')
+                .slice(-7)
+                .map(a => ({
+                    amount: parseInt(a.amount),
+                    date: new Date(a.timestamp).toLocaleDateString()
+                }));
+
+            charts.milkIntake.data.labels = milkData.map(d => d.date);
+            charts.milkIntake.data.datasets[0].data = milkData.map(d => d.amount);
+            charts.milkIntake.update();
+
+            // Update Sleep Chart
+            const sleepData = activities
+                .filter(a => a.type === 'nap')
+                .slice(-5)
+                .map(a => ({
+                    duration: parseInt(a.duration),
+                    time: new Date(a.timestamp).toLocaleTimeString()
+                }));
+
+            charts.sleep.data.labels = sleepData.map(d => d.time);
+            charts.sleep.data.datasets[0].data = sleepData.map(d => d.duration);
+            charts.sleep.update();
+
+            // Update Diaper Chart
+            const diaperCounts = activities
+                .filter(a => a.type === 'wet' || a.type === 'soiled')
+                .reduce((acc, curr) => {
+                    acc[curr.type]++;
+                    return acc;
+                }, { wet: 0, soiled: 0 });
+
+            charts.diaper.data.datasets[0].data = [diaperCounts.wet, diaperCounts.soiled];
+            charts.diaper.update();
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('theme-toggle').checked = savedTheme === 'dark';
+        }
+
+        function toggleTheme(e) {
+            if (e.target.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            }
+            // Reinitialize charts with new theme colors
+            initCharts();
+        }
+
+        // Event listeners and initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('childSelect').addEventListener('change', () => {
+                updateActivityLog();
+                updateCharts();
+            });
+            document.getElementById('theme-toggle').addEventListener('change', toggleTheme);
+            document.getElementById('addChildBtn').addEventListener('click', showAddChildModal);
+
+            loadData();
+            initTheme();
+            initCharts();
+        });
     </script>
 </body>
 </html>
