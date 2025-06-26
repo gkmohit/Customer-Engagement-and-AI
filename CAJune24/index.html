@@ -181,6 +181,71 @@
             background-image: linear-gradient(to bottom right, var(--teal-color), #80CBC4);
         }
 
+        .search-filter-container {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: var(--card-background);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .search-box {
+            margin-bottom: 1rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: var(--input-background);
+            color: var(--text-color);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(75, 137, 220, 0.25);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-controls select {
+            flex: 1;
+            min-width: 150px;
+            padding: 0.8rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-background);
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .date-filters {
+            flex: 2;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-filters input[type="date"] {
+            padding: 0.8rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-background);
+            color: var(--text-color);
+            flex: 1;
+        }
+
+        .date-filters span {
+            color: var(--text-color);
+        }
+
         .activity-log {
             margin-top: 2rem;
         }
@@ -410,6 +475,27 @@
                 <h3 class="chart-title">Diaper Changes</h3>
                 <div class="chart-wrapper">
                     <canvas id="diaperChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-filter-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search activities...">
+            </div>
+            <div class="filter-controls">
+                <select id="filterType">
+                    <option value="all">All Activities</option>
+                    <option value="wet">Wet Diapers</option>
+                    <option value="soiled">Soiled Diapers</option>
+                    <option value="milk">Milk Intake</option>
+                    <option value="food">Food</option>
+                    <option value="nap">Naps</option>
+                </select>
+                <div class="date-filters">
+                    <input type="date" id="startDate">
+                    <span>to</span>
+                    <input type="date" id="endDate">
                 </div>
             </div>
         </div>
@@ -682,18 +768,46 @@
 
             const data = JSON.parse(localStorage.getItem('childrenData'));
             const activities = data.activities[childId] || [];
+            
+            // Get filter values
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filterType = document.getElementById('filterType').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
 
-            activities
+            // Filter activities
+            const filteredActivities = activities.filter(activity => {
+                const activityDate = new Date(activity.timestamp);
+                const activityDetails = getActivityDetails(activity).toLowerCase();
+                
+                // Type filter
+                const typeMatch = filterType === 'all' || activity.type === filterType;
+                
+                // Search text filter
+                const searchMatch = !searchTerm || activityDetails.includes(searchTerm);
+                
+                // Date range filter
+                const dateMatch = (!startDate || activityDate >= new Date(startDate)) && 
+                                (!endDate || activityDate <= new Date(endDate + 'T23:59:59'));
+                
+                return typeMatch && searchMatch && dateMatch;
+            });
+
+            // Sort and display filtered activities
+            filteredActivities
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
                 .forEach(activity => {
                     const entry = document.createElement('div');
                     entry.className = 'log-entry';
-                    entry.innerHTML = formatActivity(activity);
+                    entry.innerHTML = `
+                        <div class="activity-details">${getActivityDetails(activity)}</div>
+                        <div class="timestamp">${new Date(activity.timestamp).toLocaleString()}</div>
+                    `;
                     log.appendChild(entry);
                 });
         }
 
-        function formatActivity(activity) {
+        function getActivityDetails(activity) {
             const time = new Date(activity.timestamp).toLocaleString();
             let details = '';
 
@@ -715,10 +829,7 @@
                     break;
             }
 
-            return `
-                <div class="activity-details">${details}</div>
-                <div class="timestamp">${time}</div>
-            `;
+            return `${details} ${time}`;
         }
 
         function updateCharts() {
@@ -816,6 +927,20 @@
             });
             document.getElementById('theme-toggle').addEventListener('change', toggleTheme);
             document.getElementById('addChildBtn').addEventListener('click', showAddChildModal);
+
+            // Add search and filter event listeners
+            document.getElementById('searchInput').addEventListener('input', updateActivityLog);
+            document.getElementById('filterType').addEventListener('change', updateActivityLog);
+            document.getElementById('startDate').addEventListener('change', updateActivityLog);
+            document.getElementById('endDate').addEventListener('change', updateActivityLog);
+
+            // Set initial date range (last 7 days)
+            const today = new Date();
+            const lastWeek = new Date(today);
+            lastWeek.setDate(lastWeek.getDate() - 7);
+            
+            document.getElementById('startDate').value = lastWeek.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
 
             loadData();
             initTheme();
