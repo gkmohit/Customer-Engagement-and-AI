@@ -54,7 +54,6 @@
             color: var(--text-color);
             line-height: 1.6;
             padding: 1rem;
-            max-width: 600px;
             margin: 0 auto;
             transition: background-color 0.3s, color 0.3s;
         }
@@ -62,10 +61,13 @@
         .container {
             background: var(--card-background);
             border-radius: 16px;
-            padding: 1.5rem;
+            padding: 2rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
             transition: background-color 0.3s;
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 95%;
         }
 
         h1 {
@@ -148,13 +150,20 @@
 
         .activity-buttons {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .activity-buttons button {
-            padding: 1rem;
+            padding: 1.2rem;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 1200px) {
+            .activity-buttons {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
 
         .activity-buttons button[data-type="wet"] {
@@ -183,25 +192,39 @@
         }
 
         .search-filter-container {
-            margin: 1.5rem 0;
-            padding: 1rem;
+            margin: 2rem 0;
+            padding: 1.5rem;
             background: var(--card-background);
             border-radius: 12px;
             border: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            align-items: start;
         }
 
         .search-box {
-            margin-bottom: 1rem;
+            margin: 0;
         }
 
         .search-box input {
             width: 100%;
-            padding: 0.8rem 1rem;
+            padding: 1rem 1.2rem;
             border: 2px solid var(--border-color);
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             background-color: var(--input-background);
             color: var(--text-color);
+        }
+
+        @media (max-width: 1200px) {
+            .search-filter-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .search-box {
+                margin-bottom: 1rem;
+            }
         }
 
         .search-box input:focus {
@@ -410,24 +433,29 @@
 
         .charts-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
             margin-top: 2rem;
             padding: 1rem;
-            justify-items: center;
+            justify-items: stretch;
         }
 
         .chart-card {
             background: var(--card-background);
             border-radius: 12px;
-            padding: 1rem;
+            padding: 1.5rem;
             box-shadow: 0 2px 4px rgba(75, 137, 220, 0.1);
             border: 1px solid var(--border-color);
             width: 100%;
-            max-width: 500px;
             display: flex;
             flex-direction: column;
             align-items: center;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-container {
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            }
         }
 
         .chart-title {
@@ -463,8 +491,10 @@
             font-size: 0.9em;
             padding: 8px;
             border-radius: 4px;
-            background-color: var(--bg-secondary);
+            background-color: var(--background-color);
+            color: var(--text-color);
             margin-top: 10px;
+            border: 1px solid var(--border-color);
         }
 
         /* Add padding to chart containers */
@@ -1150,6 +1180,20 @@
             document.getElementById('sleepPatterns').textContent = patternText;
         }
 
+        function destroyCharts() {
+            Object.values(charts).forEach(chart => {
+                if (chart) {
+                    chart.destroy();
+                }
+            });
+            charts = {
+                activityPattern: null,
+                milkIntake: null,
+                sleep: null,
+                diaper: null
+            };
+        }
+
         function initTheme() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -1158,42 +1202,38 @@
 
         function toggleTheme(e) {
             if (e.target.checked) {
-                document.documentElement.setAttribute('data-theme', 'dark');
                 localStorage.setItem('theme', 'dark');
             } else {
-                document.documentElement.setAttribute('data-theme', 'light');
                 localStorage.setItem('theme', 'light');
             }
-            // Reinitialize charts with new theme colors
+            document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
+            
+            // Destroy existing charts
+            destroyCharts();
+            // Reinitialize with new theme colors
             initCharts();
+            // Update with current data
+            updateCharts();
         }
 
         // Event listeners and initialization
         document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            initCharts();
+            loadData();
+
+            document.getElementById('theme-toggle').addEventListener('change', toggleTheme);
+            document.getElementById('addChildBtn').addEventListener('click', showAddChildModal);
             document.getElementById('childSelect').addEventListener('change', () => {
                 updateActivityLog();
                 updateCharts();
             });
-            document.getElementById('theme-toggle').addEventListener('change', toggleTheme);
-            document.getElementById('addChildBtn').addEventListener('click', showAddChildModal);
 
-            // Add search and filter event listeners
+            // Add event listeners for search and filters
             document.getElementById('searchInput').addEventListener('input', updateActivityLog);
             document.getElementById('filterType').addEventListener('change', updateActivityLog);
             document.getElementById('startDate').addEventListener('change', updateActivityLog);
             document.getElementById('endDate').addEventListener('change', updateActivityLog);
-
-            // Set initial date range (last 7 days)
-            const today = new Date();
-            const lastWeek = new Date(today);
-            lastWeek.setDate(lastWeek.getDate() - 7);
-            
-            document.getElementById('startDate').value = lastWeek.toISOString().split('T')[0];
-            document.getElementById('endDate').value = today.toISOString().split('T')[0];
-
-            loadData();
-            initTheme();
-            initCharts();
         });
     </script>
 </body>
